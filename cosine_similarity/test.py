@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
@@ -22,19 +23,26 @@ def calculate_cosine_similarity(titles, new_title):
 if __name__ == "__main__":
     # JSON 파일 경로 (상대경로로 설정)
     current_dir = os.path.dirname(__file__)  # 현재 스크립트의 디렉토리
-    file_path = os.path.join(current_dir, "test_data.json")
+    file_path = os.path.join(current_dir, "test_data.json")  # 확장된 데이터 파일 사용
     
     # 데이터 로드
     data = load_data(file_path)
     titles = [item['title'] for item in data]
     
     # 새로운 입력
-    new_title = "FE 설정"
+    new_title = "백엔드 "
+    
+    # 실행 시간 측정 시작
+    start_time = time.time()
     
     # 코사인 유사도 계산
     most_similar_index, similarity_score = calculate_cosine_similarity(titles, new_title)
+    
+    # 실행 시간 측정 종료
+    end_time = time.time()
     
     # 결과 출력
     print(f"새로운 입력: {new_title}")
     print(f"가장 유사한 제목: {titles[most_similar_index]} (Index: {most_similar_index})")
     print(f"유사도 점수: {similarity_score:.4f}")
+    print(f"실행 시간: {end_time - start_time:.2f}초")
