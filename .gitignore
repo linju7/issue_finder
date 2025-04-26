@@ -1,0 +1,9 @@
+FE/node_modules
+
+BE/venv
+
+BE/__pycache__
+BE/issue_data
+BE/security.py
+BE/node_modules
+BE/model_cache
