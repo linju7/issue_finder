@@ -16,7 +16,7 @@ def load_data(file_path):
     except json.JSONDecodeError:
         raise ValueError("JSON 파일을 파싱하는 데 실패했습니다.")
 
-# SBERT 기반 코사인 유사도 계산 함수
+# SBERT 기반 코사인 유사도 계산 함수 (수정)
 def calculate_cosine_similarity(target, data, model=MODEL):
     # 제목 리스트 추출
     titles = [item['title'] for item in data]
@@ -28,13 +28,15 @@ def calculate_cosine_similarity(target, data, model=MODEL):
     # 코사인 유사도 계산
     similarities = util.cos_sim(target_embedding, title_embeddings)
 
-    # 가장 유사한 제목의 인덱스와 유사도 점수 반환
-    most_similar_index = np.argmax(similarities.cpu().numpy())
-    similarity_score = similarities[0][most_similar_index].item()
+    # 유사도 점수를 numpy 배열로 변환
+    similarity_scores = similarities.cpu().numpy()[0]
 
-    return most_similar_index, similarity_score
+    # 유사도 점수를 기준으로 정렬된 인덱스 반환
+    sorted_indices = np.argsort(similarity_scores)[::-1]
 
-# 검색 기능 구현
+    return sorted_indices, similarity_scores
+
+# 검색 기능 구현 (수정)
 def do_all_search(target):
     # 1. JSON 데이터 로드
     current_dir = os.path.dirname(__file__)  # 현재 파일의 디렉토리
@@ -43,12 +45,18 @@ def do_all_search(target):
     data = load_data(file_path)
 
     # 2. 코사인 유사도 계산
-    most_similar_index, similarity_score = calculate_cosine_similarity(target, data)
+    sorted_indices, similarity_scores = calculate_cosine_similarity(target, data)
 
-    # 3. 결과 반환
+    # 3. 결과 생성
+    results = []
+    for index in sorted_indices:
+        results.append({
+            "title": str(data[index]['title']),  # 문자열로 변환
+            "similarity_score": float(similarity_scores[index]),  # numpy.float32 -> float 변환
+            "link": str(data[index]['link'])  # 문자열로 변환
+        })
+
     return {
-        "target": target,
-        "most_similar_title": data[most_similar_index]['title'],
-        "similarity_score": similarity_score,
-        "link": data[most_similar_index]['link']
+        "target": str(target),  # 문자열로 변환
+        "results": results
     }
