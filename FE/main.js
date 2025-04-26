@@ -1,4 +1,5 @@
 const { app, BrowserWindow } = require('electron');
+const path = require('path');
 
 let mainWindow;
 
@@ -7,17 +8,13 @@ app.on('ready', () => {
     width: 800,
     height: 600,
     webPreferences: {
-      nodeIntegration: true, // Node.js 통합 활성화
+      preload: path.join(__dirname, 'preload.js'), // 필요 시 preload 스크립트 추가
+      contextIsolation: true,
     },
   });
 
   // index.html 파일 로드
-  mainWindow.loadFile('index.html');
-
-  // 창이 닫힐 때 참조 제거
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
+  mainWindow.loadFile(path.join(__dirname, 'index.html'));
 });
 
 app.on('window-all-closed', () => {
