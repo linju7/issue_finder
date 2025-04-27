@@ -6,9 +6,9 @@ let mainWindow;
 app.on('ready', () => {
   mainWindow = new BrowserWindow({
     width: 800,
-    height: 600,
+    height: 700, // 세로 크기 증가
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'), // 필요 시 preload 스크립트 추가
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
     },
   });
