@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>이슈검색</title>
   <link rel="stylesheet" href="styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"> <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" rel="stylesheet">
 </head>
 <body>
   <div class="container">
@@ -14,12 +17,21 @@
     </div>
     <div class="search-form">
       <input type="text" id="search-input" class="search-input" placeholder="검색어를 입력하세요" />
-      <button id="search-button" class="search-button">검색</button>
+      <button id="search-button" class="search-button">
+        <i class="fas fa-search button-icon"></i>
+      </button>
+      <button id="reset-button" class="reset-button">
+        <i class="fas fa-redo button-icon"></i>
+      </button>
     </div>
     <div id="result-container" class="result-container"></div>
-    <div id="pagination-controls" class="pagination-controls">
-      <button id="prev-button" class="pagination-button" disabled>이전</button>
-      <button id="next-button" class="pagination-button" disabled>다음</button>
+    <div id="pagination-controls" class="pagination-controls" style="display: none;">
+      <button id="prev-button" class="pagination-button" disabled>
+        <i class="fas fa-arrow-left button-icon"></i> 이전
+      </button>
+      <button id="next-button" class="pagination-button" disabled>
+        다음 <i class="fas fa-arrow-right button-icon"></i>
+      </button>
     </div>
   </div>
   <script src="renderer.js"></script>
