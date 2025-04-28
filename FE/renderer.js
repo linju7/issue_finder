@@ -147,7 +147,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+        if (response.status === 401) {
+          throw new Error('인증키 값이 잘못되었습니다'); // 401 에러 메시지 변경
+        } else {
+          throw new Error(`Error: ${response.status}`);
+        }
       }
 
       const data = await response.json();
