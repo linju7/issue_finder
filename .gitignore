@@ -7,3 +7,6 @@ BE/issue_data
 BE/security.py
 BE/node_modules
 BE/model_cache
+
+BS4/crawling_target
+BS4/extract_keyword
