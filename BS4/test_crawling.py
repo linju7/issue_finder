@@ -1,6 +1,4 @@
-import asyncio
 import json
-from playwright.async_api import async_playwright
 from bs4 import BeautifulSoup
 from crawling_target import html_input
 from extract_keyword import keyword_map
@@ -9,26 +7,40 @@ def extract_links_and_summaries(html_content, keyword_map):
     soup = BeautifulSoup(html_content, 'html.parser')
     results = []
 
-    rows = soup.find_all('div', {'role': 'row'})
+    # HTML에서 각 row를 찾음
+    rows = soup.select('tbody > tr')  # tbody > tr을 기준으로 찾음
     for row in rows:
-        link_tag = row.find('a', {'data-testid': 'business-list.ui.list-view.key-cell.issue-key'})
-        if link_tag and link_tag.get('href'):
-            link = f"https://linju7nts.atlassian.net{link_tag['href']}"
+        # 링크와 텍스트 추출
+        link_tag = row.select_one('td.summary')
+        if link_tag:
+            # 모든 <a> 태그를 선택
+            issue_links = link_tag.select('a.issue-link')
+            if len(issue_links) > 1:  # 두 번째 링크가 있는지 확인
+                issue_link = issue_links[1]  # 두 번째 <a> 태그 선택
+                href = issue_link.get('href')  # href 속성 추출
+                text = issue_link.get_text(strip=True)  # 텍스트 추출
+                full_link = f"https://jira.navercorp.com{href}"  # 링크 앞에 도메인 추가
+            else:
+                full_link = None
+                text = None
         else:
-            continue
+            full_link = None
+            text = None
 
-        summary_tag = row.find('span', {'data-testid': 'business-list.ui.list-view.summary-cell'})
-        if summary_tag:
-            summary = summary_tag.get_text(strip=True)
-            expanded_summary = expand_keywords(summary, keyword_map)  # 키워드 확장 적용
+        # 제목 추출
+        title_tag = row.select_one('td.summary')
+        if title_tag:
+            title = text  # 두 번째 링크의 텍스트를 제목으로 사용
+            expanded_title = expand_keywords(title, keyword_map) if title else None  # 키워드 확장 적용
         else:
-            summary = None
-            expanded_summary = None
+            title = None
+            expanded_title = None
 
+        # 결과에 추가
         results.append({
-            'link': link,
-            'title': summary,
-            'expanded_title': expanded_summary  # 확장된 텍스트 추가
+            'link': full_link,
+            'title': title,
+            'expanded_title': expanded_title  # 확장된 텍스트 추가
         })
 
     return results
@@ -40,9 +52,9 @@ def expand_keywords(text, keyword_map):
         bidirectional_map[key] = value
         bidirectional_map[value] = key
 
-    # 텍스트 변환
+    # 텍스트 변환 (확장 단어 사이에 공백 추가)
     for key, value in bidirectional_map.items():
-        text = text.replace(key, f"{key} {value}")
+        text = text.replace(key, f"{key} {value} ")  # 확장 단어 사이에 공백 추가
     return text
 
 def save_to_json_file(data, file_path):
