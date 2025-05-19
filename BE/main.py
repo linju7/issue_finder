@@ -34,8 +34,8 @@ async def all_search(request: Request):
         raise HTTPException(status_code=400, detail="Missing 'target' or 'auth' in request body")
 
     # 인증값 검증
-    if auth != AUTH_KEY:
-        raise HTTPException(status_code=401, detail="Invalid authentication key")
+    # if auth != AUTH_KEY:
+    #     raise HTTPException(status_code=401, detail="Invalid authentication key")
 
     # 검색 실행
     try:
