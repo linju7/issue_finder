@@ -676,44 +676,6 @@ html_input = """
             <img src="https://jira.navercorp.com/images/nhn/issuetype_subtask.gif" height="16" width="16" border="0" align="absmiddle" alt="QA sub-task" title="QA sub-task - " loading="lazy">
         </a>
 </td><td class="issuekey">
-
-    <a class="issue-link" data-issue-key="WMFE-1236" href="/browse/WMFE-1236">WMFE-1236</a>
-</td><td class="summary"><p>
-                        <a class="issue-link parentIssue" data-issue-key="WMFE-1163" href="/browse/WMFE-1163" title="[Admin] 동적 그룹 QA">WMFE-1163</a>
-                        <a class="issue-link" data-issue-key="WMFE-1236" href="/browse/WMFE-1236">[동적그룹] 일반 내부/외부그룹 수정 &gt; 동적그룹 갱신 얼럿 노출됨</a>
-    </p>
-</td><td class="assignee">            <span class="tinylink"><span class="jira-user-hover-wrapper"><a class="user-hover user-hover-replaced" rel="NB13305" id="assignee_NB13305" href="/secure/ViewProfile.jspa?name=NB13305">양석원[Core FE]</a><button class="aui-button aui-button-text user-hover-trigger" rel="NB13305" aria-label="사용자 정보 표시" aria-haspopup="dialog" resolved=""><span class="aui-icon aui-icon-small aui-iconfont-info-filled user-hover-trigger-icon"></span></button></span></span>
-    </td><td class="reporter">            <span class="tinylink"><span class="jira-user-hover-wrapper"><a class="user-hover user-hover-replaced" rel="NT11572" id="reporter_NT11572" href="/secure/ViewProfile.jspa?name=NT11572">김문지[Works QA]</a><button class="aui-button aui-button-text user-hover-trigger" rel="NT11572" aria-label="사용자 정보 표시" aria-haspopup="dialog" resolved=""><span class="aui-icon aui-icon-small aui-iconfont-info-filled user-hover-trigger-icon"></span></button></span></span>
-    </td><td class="priority">            <img src="https://jira.navercorp.com/images/icons/priorities/minor.svg" height="16" width="16" border="0" align="absmiddle" alt="Minor" title="Minor - 일부 기능 이상, 또는 임시 방편이 있는 경우" loading="lazy">
-    </td><td class="status">
-                <span class=" jira-issue-status-lozenge aui-lozenge jira-issue-status-lozenge-success jira-issue-status-lozenge-done aui-lozenge-subtle jira-issue-status-lozenge-max-width-medium" data-tooltip="<span class=&quot;jira-issue-status-tooltip-title&quot;>닫힘</span><br><span class=&quot;jira-issue-status-tooltip-desc&quot;>이슈가 처리되어 확인까지 완료한 경우</span>" title="<span class=&quot;jira-issue-status-tooltip-title&quot;>닫힘</span><br><span class=&quot;jira-issue-status-tooltip-desc&quot;>이슈가 처리되어 확인까지 완료한 경우</span>" tabindex="0">닫힘</span>    </td><td class="resolution">    수정
-</td><td class="created"> <span title="2025-03-17 14:33"><time datetime="2025-03-17T14:33:12+0900">2025-03-17</time></span> </td><td class="updated"> <span title="2025-04-21 06:18"><time datetime="2025-04-21T06:18:37+0900">2025-04-21</time></span> </td><td class="customfield_210545"></td><td class="customfield_213734">    <div class="dev-status-column-view-wrapper"></div>
-</td><td class="issue_actions">    <a class="issue-actions-trigger aui-button aui-button-compact aui-button-subtle trigger-happy" id="actions_3133428" title="조치 (이슈 조치를 보기 위해 . 을 입력하세요)" href="/rest/api/1.0/issues/3133428/ActionsAndOperations?atl_token=AXYA-2K30-4QQF-89AQ_1d617f19682782e23509b8937c47d850da9b69fe_lin" resolved="" aria-controls="actions_3133428_drop" aria-haspopup="true" aria-expanded="false">
-        <span class="aui-icon aui-icon-small aui-iconfont-more">조치</span>
-    </a>
-</td></tr><tr id="issuerow2877130" rel="2877130" data-issuekey="WMFE-68" class="issuerow"><td class="issuetype"><a class="hidden-link issue-link" data-issue-key="WMFE-68" href="/browse/WMFE-68" tabindex="-1" title="WMFE-68"></a>     <a class="issue-link" data-issue-key="WMFE-68" href="/browse/WMFE-68">
-            <img src="https://jira.navercorp.com/images/nhn/issuetype_improvement.gif" height="16" width="16" border="0" align="absmiddle" alt="개선" title="개선 - 서비스 및 운영시스템 대상 / 기능 개선 및 사용성 개선 / 타 서비스/프로젝트로부터의 개선 요청 / 컨텐츠 제휴" loading="lazy">
-        </a>
-</td><td class="issuekey">
-
-    <a class="issue-link" data-issue-key="WMFE-68" href="/browse/WMFE-68">WMFE-68</a>
-</td><td class="summary"><p>
-                <a class="issue-link" data-issue-key="WMFE-68" href="/browse/WMFE-68">동적 그룹</a>
-    </p>
-</td><td class="assignee">            <span class="tinylink"><span class="jira-user-hover-wrapper"><a class="user-hover user-hover-replaced" rel="NB13305" id="assignee_NB13305" href="/secure/ViewProfile.jspa?name=NB13305">양석원[Core FE]</a><button class="aui-button aui-button-text user-hover-trigger" rel="NB13305" aria-label="사용자 정보 표시" aria-haspopup="dialog" resolved=""><span class="aui-icon aui-icon-small aui-iconfont-info-filled user-hover-trigger-icon"></span></button></span></span>
-    </td><td class="reporter">            <span class="tinylink"><span class="jira-user-hover-wrapper"><a class="user-hover user-hover-replaced" rel="NB13313" id="reporter_NB13313" href="/secure/ViewProfile.jspa?name=NB13313">김수미[IAM/Admin Planning]</a><button class="aui-button aui-button-text user-hover-trigger" rel="NB13313" aria-label="사용자 정보 표시" aria-haspopup="dialog" resolved=""><span class="aui-icon aui-icon-small aui-iconfont-info-filled user-hover-trigger-icon"></span></button></span></span>
-    </td><td class="priority">            <img src="https://jira.navercorp.com/images/icons/priorities/minor.svg" height="16" width="16" border="0" align="absmiddle" alt="Minor" title="Minor - 일부 기능 이상, 또는 임시 방편이 있는 경우" loading="lazy">
-    </td><td class="status">
-                <span class=" jira-issue-status-lozenge aui-lozenge jira-issue-status-lozenge-success jira-issue-status-lozenge-done aui-lozenge-subtle jira-issue-status-lozenge-max-width-medium" data-tooltip="<span class=&quot;jira-issue-status-tooltip-title&quot;>해결</span><br><span class=&quot;jira-issue-status-tooltip-desc&quot;>문제에 대해 해결 방안이 제시 되었음 </span>" title="<span class=&quot;jira-issue-status-tooltip-title&quot;>해결</span><br><span class=&quot;jira-issue-status-tooltip-desc&quot;>문제에 대해 해결 방안이 제시 되었음 </span>" tabindex="0">해결</span>    </td><td class="resolution">    수정
-</td><td class="created"> <span title="2024-10-04 10:37"><time datetime="2024-10-04T10:37:23+0900">2024-10-04</time></span> </td><td class="updated"> <span title="2025-04-11 14:01"><time datetime="2025-04-11T14:01:02+0900">2025-04-11</time></span> </td><td class="customfield_210545"></td><td class="customfield_213734">    <div class="dev-status-column-view-wrapper"></div>
-</td><td class="issue_actions">    <a class="issue-actions-trigger aui-button aui-button-compact aui-button-subtle trigger-happy" id="actions_2877130" title="조치 (이슈 조치를 보기 위해 . 을 입력하세요)" href="/rest/api/1.0/issues/2877130/ActionsAndOperations?atl_token=AXYA-2K30-4QQF-89AQ_1d617f19682782e23509b8937c47d850da9b69fe_lin" resolved="" aria-controls="actions_2877130_drop" aria-haspopup="true" aria-expanded="false">
-        <span class="aui-icon aui-icon-small aui-iconfont-more">조치</span>
-    </a>
-</td></tr><tr id="issuerow3155713" rel="3155713" data-issuekey="WMFE-1383" class="issuerow"><td class="issuetype"><a class="hidden-link issue-link" data-issue-key="WMFE-1383" href="/browse/WMFE-1383" tabindex="-1" title="WMFE-1383"></a>     <a class="issue-link" data-issue-key="WMFE-1383" href="/browse/WMFE-1383">
-            <img src="https://jira.navercorp.com/images/nhn/issuetype_subtask.gif" height="16" width="16" border="0" align="absmiddle" alt="QA sub-task" title="QA sub-task - " loading="lazy">
-        </a>
-</td><td class="issuekey">
-
     <a class="issue-link" data-issue-key="WMFE-1383" href="/browse/WMFE-1383">WMFE-1383</a>
 </td><td class="summary"><p>
                         <a class="issue-link parentIssue" data-issue-key="WMFE-1163" href="/browse/WMFE-1163" title="[Admin] 동적 그룹 QA">WMFE-1163</a>

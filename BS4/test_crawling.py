@@ -2,6 +2,7 @@ import json
 from bs4 import BeautifulSoup
 from crawling_target import html_input
 from extract_keyword import keyword_map
+import psycopg2  # PostgreSQL 연결을 위한 라이브러리
 
 def extract_links_and_summaries(html_content, keyword_map):
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -57,15 +58,38 @@ def expand_keywords(text, keyword_map):
         text = text.replace(key, f"{key} {value} ")  # 확장 단어 사이에 공백 추가
     return text
 
-def save_to_json_file(data, file_path):
-    with open(file_path, 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
+def save_to_database(data):
+    # PostgreSQL 데이터베이스 연결
+    connection = psycopg2.connect(
+        dbname="test",
+        user="junil",
+        password="your_password",  # 비밀번호를 입력하세요
+        host="localhost",
+        port="5432"
+    )
+    cursor = connection.cursor()
+
+    # 데이터 삽입
+    insert_query = """
+    INSERT INTO pairing_content (link, title, expanded_title)
+    VALUES (%s, %s, %s)
+    ON CONFLICT (link) DO UPDATE
+    SET title = EXCLUDED.title,
+        expanded_title = EXCLUDED.expanded_title,
+        updated_at = NOW();
+    """
+    for item in data:
+        cursor.execute(insert_query, (item['link'], item['title'], item['expanded_title']))
+
+    # 변경사항 커밋 및 연결 종료
+    connection.commit()
+    cursor.close()
+    connection.close()
 
 # 링크와 summary 추출
 extracted_data = extract_links_and_summaries(html_input, keyword_map)
 
-# JSON 파일로 저장
-output_file_path = "../BE/issue_data/test_data.json"  # 저장할 파일 경로
-save_to_json_file(extracted_data, output_file_path)
+# 데이터베이스에 저장
+save_to_database(extracted_data)
 
-print(f"Data has been saved to {output_file_path}")
+print("Data has been saved to the database.")
