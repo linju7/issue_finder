@@ -4,7 +4,8 @@ from all_search.all_search import do_all_search
 from security import AUTH
 
 app = FastAPI()
- 
+
+# CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
