@@ -4,10 +4,10 @@ from all_search.all_search import do_all_search
 from security import AUTH
 
 app = FastAPI()
-
+ 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 필요한 도메인만 허용하거나 "*"로 모든 도메인 허용
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

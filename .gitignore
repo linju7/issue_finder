@@ -3,13 +3,15 @@ FE/node_modules
 BE/venv
 
 BE/__pycache__
-BE/issue_data
 BE/security.py
 BE/node_modules
 BE/model_cache
 
-BS4/crawling_target
-BS4/extract_keyword
+BE/all_search/__pycache__
+
+BS4/__pycache__
+BS4/crawling_target.py
+BS4/extract_keyword.py
 BS4/security.py
 
 BE/KR-SBERT-V40K-klueNLI-augSTS
