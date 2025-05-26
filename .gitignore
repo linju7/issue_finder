@@ -10,5 +10,6 @@ BE/model_cache
 
 BS4/crawling_target
 BS4/extract_keyword
+BS4/security.py
 
 BE/KR-SBERT-V40K-klueNLI-augSTS
