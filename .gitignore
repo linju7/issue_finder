@@ -11,11 +11,9 @@ BE/all_search/__pycache__
 
 BS4/__pycache__
 BS4/crawling_target.py
-BS4/extract_keyword.py
+BS4/expand_keyword_map.py
 BS4/security.py
 
-BS4/test/security.py
-BS4/test/issue_table_wrapper.html
-BS4/test/extracted_data.json
+BS4/issue_data
 
 BE/KR-SBERT-V40K-klueNLI-augSTS
