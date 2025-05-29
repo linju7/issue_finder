@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from all_search.all_search import do_all_search
+from all_search.all_search import search
 from security import AUTH
 
 app = FastAPI()
@@ -20,11 +20,11 @@ AUTH_KEY = AUTH
 # 기본 라우트
 @app.get("/")
 def read_root():
-    return {"message": "Hello, FastAPI!"}
+    return {"message": "API is running"}
 
 # 검색 API
-@app.post("/all/search")
-async def all_search(request: Request):
+@app.post("/search")
+async def search_api(request: Request):
     # 요청 데이터 추출
     body = await request.json()
     target = body.get("target")
@@ -35,16 +35,14 @@ async def all_search(request: Request):
         raise HTTPException(status_code=400, detail="Missing 'target' or 'auth' in request body")
 
     # 인증값 검증
-    # if auth != AUTH_KEY:
-    #     raise HTTPException(status_code=401, detail="Invalid authentication key")
+    if auth != AUTH_KEY:
+        raise HTTPException(status_code=401, detail="Invalid authentication key")
 
     # 검색 실행
     try:
-        response = do_all_search(target)
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        response = search(target)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
     # 결과 반환
     return response
