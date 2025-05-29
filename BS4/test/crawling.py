@@ -1,7 +1,44 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
+import html
 from security import cookies
+
+def extract_links_and_summaries(html_content):
+    soup = BeautifulSoup(html_content, 'html.parser')
+    results = []
+
+    # HTML에서 각 row를 찾음
+    rows = soup.select('tbody > tr')  # tbody > tr을 기준으로 찾음
+    for row in rows:
+        # 링크와 텍스트 추출
+        summary_cell = row.select_one('td.summary')  # summary 셀 찾기
+        if summary_cell:
+            # summary 셀 내부에서 모든 <a> 태그를 찾음
+            issue_links = summary_cell.select('a.issue-link')  # 모든 issue-link 클래스의 <a> 태그 찾기
+            for issue_link in issue_links:
+                # parentIssue 클래스 제외
+                if 'parentIssue' in issue_link.get('class', []):
+                    continue
+
+                # 텍스트가 이슈 번호만 포함된 경우 제외
+                text = issue_link.get_text(strip=True)
+                if text == issue_link.get('data-issue-key'):
+                    continue
+
+                # href 속성 추출 및 링크 생성
+                href = issue_link.get('href')
+                full_link = f"https://jira.navercorp.com{href}"
+
+                # 결과에 추가
+                if full_link and text:  # 링크와 텍스트가 존재하는 경우만 추가
+                    results.append({
+                        'link': full_link,
+                        'text': html.unescape(text)  # HTML 엔티티 변환
+                    })
+
+    return results
 
 # Chrome 옵션 설정
 chrome_options = Options()
@@ -18,18 +55,13 @@ for cookie in cookies:
 # 페이지 새로고침하여 쿠키 적용
 driver.refresh()
 
-# div class="issue-table-wrapper" 요소 가져오기
-try:
-    issue_table_wrapper = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
-    html_content = issue_table_wrapper.get_attribute("outerHTML")  # 해당 요소의 전체 HTML 가져오기
+# Selenium으로 HTML 가져오기
+issue_table_wrapper = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
+html_content = issue_table_wrapper.get_attribute("outerHTML")  # HTML 가져오기
 
-    # HTML을 파일에 저장
-    output_file_path = "/Users/user/Desktop/Code/issue_finder/BS4/test/issue_table_wrapper.html"
-    with open(output_file_path, "w", encoding="utf-8") as file:
-        file.write(html_content)
+# 링크와 텍스트 추출
+extracted_data = extract_links_and_summaries(html_content)
 
-    print(f"HTML content saved to {output_file_path}")
-except Exception as e:
-    print(f"Error: {e}")
-
-driver.quit()
+# 결과 출력
+for i, data in enumerate(extracted_data, start=1):
+    print(f"{i}. Link: {data['link']}, Text: {data['text']}")
