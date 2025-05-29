@@ -16,5 +16,6 @@ BS4/security.py
 
 BS4/test/security.py
 BS4/test/issue_table_wrapper.html
+BS4/test/extracted_data.json
 
 BE/KR-SBERT-V40K-klueNLI-augSTS

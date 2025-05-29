@@ -3,6 +3,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from bs4 import BeautifulSoup
 import html
+import json
 from security import cookies
 
 def extract_links_and_summaries(html_content):
@@ -35,7 +36,7 @@ def extract_links_and_summaries(html_content):
                 if full_link and text:  # 링크와 텍스트가 존재하는 경우만 추가
                     results.append({
                         'link': full_link,
-                        'text': html.unescape(text)  # HTML 엔티티 변환
+                        'title': html.unescape(text)  # HTML 엔티티 변환
                     })
 
     return results
@@ -62,6 +63,9 @@ html_content = issue_table_wrapper.get_attribute("outerHTML")  # HTML 가져오�
 # 링크와 텍스트 추출
 extracted_data = extract_links_and_summaries(html_content)
 
-# 결과 출력
-for i, data in enumerate(extracted_data, start=1):
-    print(f"{i}. Link: {data['link']}, Text: {data['text']}")
+# JSON 파일로 저장
+output_file = "/Users/user/Desktop/Code/issue_finder/BS4/test/extracted_data.json"
+with open(output_file, "w", encoding="utf-8") as f:
+    json.dump(extracted_data, f, ensure_ascii=False, indent=4)
+
+print(f"Extracted data has been saved to {output_file}")
