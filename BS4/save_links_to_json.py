@@ -39,30 +39,38 @@ def parse_issue_links(html_content):
     return issues
 
 def save_issues_to_json():
-    """Selenium을 사용해 데이터를 추출하고 JSON 파일로 저장"""
+    """Selenium을 사용해 여러 페이지 데이터를 추출하고 JSON 파일로 저장"""
     chrome_options = Options()
     chrome_options.add_argument("--start-maximized")  # 브라우저 최대화
     driver = webdriver.Chrome(options=chrome_options)
 
-    driver.get(url)
+    all_issues = []  # 모든 페이지의 데이터를 저장할 리스트
 
-    for cookie in cookies:
-        driver.add_cookie(cookie)
+    # 1000개 이슈 수집
+    for start_index in range(0, 981, 20):
+        paginated_url = f"{url}&startIndex={start_index}"
+        print(f"Fetching data from: {paginated_url}")
+        driver.get(paginated_url)
 
-    driver.refresh()  # 페이지 새로고침하여 쿠키 적용
+        for cookie in cookies:
+            driver.add_cookie(cookie)
 
-    issue_table = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
-    html_content = issue_table.get_attribute("outerHTML")  # HTML 가져오기
+        driver.refresh()  # 페이지 새로고침하여 쿠키 적용
 
-    issues = parse_issue_links(html_content)
+        issue_table = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
+        html_content = issue_table.get_attribute("outerHTML")  # HTML 가져오기
 
+        issues = parse_issue_links(html_content)
+        all_issues.extend(issues)  # 각 페이지의 데이터를 리스트에 추가
+
+    # JSON 파일로 저장
     output_dir = "./issue_data"
     os.makedirs(output_dir, exist_ok=True)
     output_file = os.path.join(output_dir, "plane_issue.json")
     with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(issues, f, ensure_ascii=False, indent=4)
+        json.dump(all_issues, f, ensure_ascii=False, indent=4)
 
-    print(f"Issues have been saved to {output_file}")
+    print(f"All issues have been saved to {output_file}")
     driver.quit()
 
 if __name__ == "__main__":

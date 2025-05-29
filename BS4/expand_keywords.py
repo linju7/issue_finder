@@ -1,6 +1,6 @@
 import json
 import os
-from extract_keyword import keyword_map
+from expand_keyword_map import keyword_map
 
 def apply_keyword_expansion(title, keyword_map):
     """키워드 확장을 적용하여 제목을 변환"""
