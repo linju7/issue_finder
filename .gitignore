@@ -1,6 +1,6 @@
 FE/node_modules
 
-BE/venv
+venv
 
 BE/__pycache__
 BE/security.py

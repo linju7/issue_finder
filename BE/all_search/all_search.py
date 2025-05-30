@@ -3,7 +3,7 @@ import os
 import numpy as np
 import psycopg2
 import re
-from konlpy.tag import Okt
+from konlpy.tag import Mecab
 from sentence_transformers import SentenceTransformer, util
 from sklearn.feature_extraction.text import TfidfVectorizer
 from security import DB_password
@@ -35,10 +35,10 @@ def fetch_data():
 def preprocess_text(text):
     if not text:
         return ""
-    okt = Okt()
+    mecab = Mecab(dicpath='/opt/homebrew/lib/mecab/dic/mecab-ko-dic')
     text = re.sub(r'[^\w\s]', '', text)  # 특수문자 제거
     text = re.sub(r'\s+', ' ', text).strip()  # 공백 정리
-    tokens = okt.morphs(text, stem=True)  # 형태소 분석
+    tokens = mecab.morphs(text)  # 형태소 분석
     stopwords = {'은', '는', '이', '가', '을', '를', '에', '의', '도', '로', '와', '과', '하다', '되다', '있다', '없다'}  # 불용어
     return ' '.join([token for token in tokens if token not in stopwords])
 
