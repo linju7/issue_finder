@@ -17,126 +17,176 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const getCardColor = (similarity) => {
-    if (similarity >= 0.9) return '#ff4d4f'; // 빨강 (가장 중요)
-    if (similarity >= 0.8) return '#ffa940'; // 주황
-    if (similarity >= 0.7) return '#ffc53d'; // 노랑
-    if (similarity >= 0.6) return '#bae637'; // 연두
-    return '#d9f7be'; // 연한 초록 (덜 중요)
+    // 토스 블루 계열: 유사도 높을수록 진한 파랑
+    if (similarity >= 0.95) return '#3182f6'; // 진한 토스 블루
+    if (similarity >= 0.9) return '#4f98fa';
+    if (similarity >= 0.8) return '#7bb8fa';
+    if (similarity >= 0.7) return '#b3d6fd';
+    return '#e8f3ff'; // 연한 파랑
   };
 
-  const renderPaginationControls = () => {
-    paginationControls.innerHTML = ''; // 기존 버튼 초기화
+  // section 참조
+  const formSection = document.querySelector('.form-section');
+  const resultsSection = document.querySelector('.results-section');
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const resetButton2 = document.getElementById('reset-button2');
+  // 모달 관련
+  const modalOverlay = document.getElementById('modal-overlay');
+  const modalTitle = document.getElementById('modal-title');
+  const modalDesc = document.getElementById('modal-desc');
+  const modalClose = document.getElementById('modal-close');
 
-    if (results.length > 0) {
-      paginationControls.style.display = 'flex'; // 검색 결과가 있을 때 표시
-
-      // 이전 버튼
-      const prevButton = document.createElement('button');
-      prevButton.id = 'prev-button';
-      prevButton.classList.add('pagination-button');
-      prevButton.textContent = '이전';
-      prevButton.disabled = currentPage === 0;
-      prevButton.addEventListener('click', () => {
-        if (currentPage > 0) {
-          currentPage--;
-          renderResults();
-        }
-      });
-      paginationControls.appendChild(prevButton);
-
-      // 페이지 번호 버튼 (최대 5개 표시)
-      const totalPages = Math.ceil(results.length / resultsPerPage);
-      const maxVisiblePages = 5;
-      let startPage = Math.max(0, currentPage - Math.floor(maxVisiblePages / 2));
-      let endPage = Math.min(totalPages, startPage + maxVisiblePages);
-
-      // 페이지 번호가 끝에 가까울 때 조정
-      if (endPage - startPage < maxVisiblePages) {
-        startPage = Math.max(0, endPage - maxVisiblePages);
-      }
-
-      for (let i = startPage; i < endPage; i++) {
-        const pageButton = document.createElement('button');
-        pageButton.classList.add('page-button');
-        pageButton.textContent = i + 1;
-        if (i === currentPage) {
-          pageButton.classList.add('active'); // 현재 페이지 강조
-        }
-        pageButton.addEventListener('click', () => {
-          currentPage = i;
-          renderResults();
-        });
-        paginationControls.appendChild(pageButton);
-      }
-
-      // 다음 버튼
-      const nextButton = document.createElement('button');
-      nextButton.id = 'next-button';
-      nextButton.classList.add('pagination-button');
-      nextButton.textContent = '다음';
-      nextButton.disabled = (currentPage + 1) * resultsPerPage >= results.length;
-      nextButton.addEventListener('click', () => {
-        if ((currentPage + 1) * resultsPerPage < results.length) {
-          currentPage++;
-          renderResults();
-        }
-      });
-      paginationControls.appendChild(nextButton);
-    } else {
-      paginationControls.style.display = 'none'; // 검색 결과가 없을 때 숨김
+  // 에러 메시지 동적 생성/제거 함수
+  function showInputError(input, message) {
+    input.classList.add('error');
+    let msg = input.parentElement.querySelector('.input-error-message');
+    if (!msg) {
+      msg = document.createElement('div');
+      msg.className = 'input-error-message';
+      input.parentElement.appendChild(msg);
     }
-  };
+    msg.textContent = message;
+  }
+  function clearInputError(input) {
+    input.classList.remove('error');
+    const msg = input.parentElement.querySelector('.input-error-message');
+    if (msg) msg.remove();
+  }
 
+  // 입력폼 포커스/블러 효과
+  [authInput, searchInput].forEach(input => {
+    input.addEventListener('focus', () => clearInputError(input));
+    input.addEventListener('input', () => clearInputError(input));
+  });
+
+  // 결과 fade 효과
+  function fadeOutResults(cb) {
+    resultContainer.classList.add('fade-out');
+    setTimeout(() => {
+      resultContainer.classList.remove('fade-out');
+      if (cb) cb();
+    }, 350);
+  }
+  function fadeInResults() {
+    resultContainer.classList.add('fade-in');
+    setTimeout(() => resultContainer.classList.remove('fade-in'), 350);
+  }
+
+  // section 전환 함수 (중앙 단일 박스 전환)
+  function setActiveSection(active) {
+    formSection.style.display = (active === 'form') ? 'flex' : 'none';
+    resultsSection.style.display = (active === 'results') ? 'flex' : 'none';
+  }
+
+  // 최초 진입 시 검색폼만 중앙에 표시
+  setActiveSection('form');
+
+  // Toss 스타일 로딩 오버레이
+  function showLoadingOverlay(show) {
+    loadingOverlay.style.display = show ? 'flex' : 'none';
+  }
+
+  // 무한 스크롤용 변수
+  let loadedCount = 0;
+  const LOAD_BATCH = 5; // 5개씩 로드
+
+  // 무한 스크롤 결과 렌더링
   const renderResults = () => {
+    if (!results.length) return resultContainer.innerHTML = '';
     resultContainer.innerHTML = '';
-    const start = currentPage * resultsPerPage;
-    const end = start + resultsPerPage;
-    const pageResults = results.slice(start, end);
-
-    pageResults.forEach(result => {
+    for (let i = 0; i < loadedCount; i++) {
+      const result = results[i];
       const resultElement = document.createElement('div');
-      resultElement.classList.add('result-item');
-      resultElement.style.backgroundColor = getCardColor(result.similarity_score); // 카드 색상 설정
+      resultElement.classList.add('result-item', 'result-default');
+      // 유사도 값 표시용 span
+      let simClass = result.similarity_score >= 0.6 ? 'sim-high' : 'sim-low';
+      let simText = `유사도: ${(result.similarity_score * 100).toFixed(1)}%`;
       resultElement.innerHTML = `
-        <div class="result-card">
+        <div class="result-content">
           <h3 class="result-title">${result.title}</h3>
-          <p class="result-score">유사도: ${result.similarity_score.toFixed(2)}</p>
-          <button class="copy-link-button" data-link="${result.link}" title="링크복사">
-            <i class="fas fa-copy"></i>
-          </button>
         </div>
+        <span class="result-similarity ${simClass}">${simText}</span>
       `;
-      resultContainer.appendChild(resultElement);
-    });
-
-    // 링크 복사 버튼 이벤트 추가
-    document.querySelectorAll('.copy-link-button').forEach(button => {
-      button.addEventListener('click', (e) => {
-        const link = e.currentTarget.getAttribute('data-link');
-        navigator.clipboard.writeText(link).then(() => {
-          alert('링크가 복사되었습니다!');
-        });
+      resultElement.addEventListener('click', () => {
+        window.open(result.link, '_blank');
       });
-    });
-
-    renderPaginationControls(); // 페이지네이션 표시 업데이트
+      resultContainer.appendChild(resultElement);
+    }
+    resultContainer.appendChild(sentinel);
   };
 
+  // 무한 스크롤 IntersectionObserver (result-container 내부 스크롤)
+  const sentinel = document.createElement('div');
+  sentinel.style.height = '1px';
+  sentinel.style.width = '100%';
+  resultContainer.appendChild(sentinel);
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && loadedCount < results.length) {
+      loadedCount = Math.min(loadedCount + LOAD_BATCH, results.length);
+      renderResults();
+    }
+  }, { root: resultContainer, threshold: 1.0 });
+
+  // 모달 표시 함수
+  function showModal(type) {
+    let title = '';
+    let desc = '';
+    if (type === 'auth-empty') {
+      title = '인증키가 입력되지 않았어요.';
+      desc = '인증키는 반드시 입력해야합니다. 입력하여 다시 시도해주세요.';
+    } else if (type === 'auth-wrong') {
+      title = '인증키가 올바르지 않아요.';
+      desc = '인증키를 다시 입력하여 시도해주세요.';
+    } else if (type === 'search-empty') {
+      title = '검색어가 입력되지 않았어요';
+      desc = '검색어에 찾고자 하는 이슈를 설명해주세요';
+    }
+    modalTitle.textContent = title;
+    modalDesc.textContent = desc;
+    modalOverlay.style.display = 'flex';
+    document.body.classList.add('modal-open');
+  }
+  function hideModal() {
+    modalOverlay.style.display = 'none';
+    document.body.classList.remove('modal-open');
+  }
+  modalClose.addEventListener('click', hideModal);
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) hideModal();
+  });
+
+  // 검색 버튼 클릭
   searchButton.addEventListener('click', async () => {
     const query = searchInput.value.trim();
     const auth = authInput.value.trim();
 
+    // 에러 표시 초기화
+    authInput.classList.remove('error');
+    searchInput.classList.remove('error');
+
+    // 입력값 체크 및 모달
+    if (!auth && !query) {
+      authInput.classList.add('error');
+      searchInput.classList.add('error');
+      showModal('auth-empty');
+      return;
+    }
     if (!auth) {
-      alert('인증 키를 입력하세요!');
+      authInput.classList.add('error');
+      showModal('auth-empty');
       return;
     }
-
     if (!query) {
-      alert('검색어를 입력하세요!');
+      searchInput.classList.add('error');
+      showModal('search-empty');
       return;
     }
 
-    setLoading(true); // 로딩 시작
+    showLoadingOverlay(true);
+    fadeOutResults(() => {
+      setLoading(true);
+    });
+
     try {
       const response = await fetch('/search', {
         method: 'POST',
@@ -146,7 +196,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('인증키 값이 잘못되었습니다'); // 401 에러 메시지 변경
+          authInput.classList.add('error');
+          showModal('auth-wrong');
+          // 인증키 오류 시 입력폼을 그대로 유지하고, 결과로 넘어가지 않음
+          setLoading(false);
+          showLoadingOverlay(false);
+          return;
         } else {
           throw new Error(`Error: ${response.status}`);
         }
@@ -155,21 +210,43 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       results = data.results;
       currentPage = 0;
+      loadedCount = Math.min(LOAD_BATCH, results.length);
       renderResults();
-
-      // 검색 완료 후 다시하기 버튼 표시
-      resetButton.style.display = 'inline-block';
+      setActiveSection('results');
+      if (results.length > 0) {
+        observer.disconnect();
+        observer.observe(sentinel);
+      }
     } catch (error) {
       resultContainer.innerHTML = `<p class="error">오류 발생: ${error.message}</p>`;
+      setActiveSection('results');
     } finally {
-      setLoading(false); // 로딩 종료
+      setLoading(false);
+      showLoadingOverlay(false);
     }
   });
 
+  // 다시하기 버튼(결과화면) 클릭 시 초기화
+  resetButton2.addEventListener('click', () => {
+    resultContainer.innerHTML = '';
+    loadedCount = 0;
+    results = [];
+    observer.disconnect();
+    resultContainer.appendChild(sentinel);
+    searchInput.value = '';
+    clearInputError(authInput);
+    clearInputError(searchInput);
+    setActiveSection('form');
+    searchInput.focus();
+  });
+
+  // 기존 resetButton(입력폼)도 동작 유지
   resetButton.addEventListener('click', () => {
-    resultContainer.innerHTML = ''; // 결과 영역 초기화
-    paginationControls.innerHTML = ''; // 페이지네이션 초기화
-    searchInput.value = ''; // 검색어 입력 필드 초기화
-    resetButton.style.display = 'none'; // 다시하기 버튼 숨김
+    resultContainer.innerHTML = '';
+    paginationControls.innerHTML = '';
+    searchInput.value = '';
+    clearInputError(authInput);
+    clearInputError(searchInput);
+    resetButton.style.display = 'none';
   });
 });
