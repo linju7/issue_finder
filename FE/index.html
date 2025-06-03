@@ -11,27 +11,45 @@
 </head>
 <body>
   <div class="container">
-    <div class="title">이슈검색</div>
-    <div class="auth-form">
-      <input type="text" id="auth-input" class="auth-input" placeholder="인증 키를 입력하세요" />
+    <div class="form-section show">
+      <div class="form-inner">
+        <div class="page-guide">
+          <div class="guide-title">이슈를 검색합니다.</div>
+          <div class="guide-desc">찾고자 하는 이슈를 설명해주세요.</div>
+        </div>
+        <div class="input-group auth-group">
+          <input type="text" id="auth-input" class="auth-input" placeholder=" " autocomplete="off" />
+          <label for="auth-input" class="input-label">인증 키</label>
+        </div>
+        <div class="input-group search-group">
+          <input type="text" id="search-input" class="search-input" placeholder=" " autocomplete="off" />
+          <label for="search-input" class="input-label">검색어</label>
+        </div>
+        <div class="search-form">
+          <button id="search-button" class="search-button" title="검색">검색</button>
+        </div>
+      </div>
     </div>
-    <div class="search-form">
-      <input type="text" id="search-input" class="search-input" placeholder="검색어를 입력하세요" />
-      <button id="search-button" class="search-button" title="검색">
-        <i class="fas fa-search button-icon"></i>
-      </button>
-      <button id="reset-button" class="reset-button" title="다시 검색하기" style="display: none;">
-        <i class="fas fa-redo button-icon"></i>
-      </button>
+    <div class="results-section">
+      <div class="results-inner">
+        <div class="page-guide">
+          <div class="guide-title">찾은 이슈</div>
+          <div class="guide-desc">유사도가 높은 순으로 정렬되어 있어요.</div>
+        </div>
+        <div id="result-container" class="result-container"></div>
+        <button id="reset-button2" class="reset-button" title="다시 검색하기" style="margin: 24px 0 0 0; display: block; position: relative;">다시 검색하기</button>
+      </div>
     </div>
-    <div id="result-container" class="result-container"></div>
-    <div id="pagination-controls" class="pagination-controls" style="display: none;">
-      <button id="prev-button" class="pagination-button" disabled>
-        <i class="fas fa-arrow-left button-icon"></i> 이전
-      </button>
-      <button id="next-button" class="pagination-button" disabled>
-        다음 <i class="fas fa-arrow-right button-icon"></i>
-      </button>
+    <div id="loading-overlay" class="loading-overlay" style="display:none;">
+      <span>이슈를 찾는 중<span class="loading-dots"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></span></span>
+    </div>
+    <!-- Toss-style Modal -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none;">
+      <div class="modal-box">
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-desc" id="modal-desc"></div>
+        <button class="modal-close" id="modal-close">확인</button>
+      </div>
     </div>
   </div>
   <script src="renderer.js"></script>
