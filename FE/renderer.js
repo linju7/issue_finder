@@ -138,11 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setLoading(true); // 로딩 시작
     try {
-      const response = await fetch('http://192.168.219.188:8000/search', {
+      const response = await fetch('/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ target: query, auth }),
       });
 
