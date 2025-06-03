@@ -1,15 +1,16 @@
 {
-  "name": "electron-app",
+  "name": "web-app",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "lite-server"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {},
   "devDependencies": {
-    "electron": "^25.0.0"
+    "lite-server": "^2.6.1"
   }
 }
