@@ -47,7 +47,7 @@ def save_issues_to_json():
     all_issues = []  # 모든 페이지의 데이터를 저장할 리스트
 
     # 1000개 이슈 수집
-    for start_index in range(0, 181, 20):
+    for start_index in range(0, 41, 20):
         paginated_url = f"{url}&startIndex={start_index}"
         print(f"Fetching data from: {paginated_url}")
         driver.get(paginated_url)

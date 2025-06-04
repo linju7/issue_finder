@@ -22,7 +22,7 @@ def fetch_data():
     )
     cursor = connection.cursor()
 
-    query = "SELECT link, title, expanded_title FROM pairing_content;"
+    query = "SELECT link, title, expanded_title FROM contact;"
     cursor.execute(query)
     rows = cursor.fetchall()
 

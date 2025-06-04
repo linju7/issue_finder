@@ -14,7 +14,7 @@ def insert_issues_into_db(issues):
     cursor = connection.cursor()
 
     insert_query = """
-    INSERT INTO pairing_content (link, title, expanded_title)
+    INSERT INTO contact (link, title, expanded_title)
     VALUES (%s, %s, %s)
     ON CONFLICT (link) DO UPDATE
     SET title = EXCLUDED.title,
