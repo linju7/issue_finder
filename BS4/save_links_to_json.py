@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import html
 import json
 import os
-from security import cookies, url
+from security import cookies, configs
 
 def parse_issue_links(html_content):
     """HTML에서 링크와 제목을 추출하여 리스트로 반환"""
@@ -44,33 +44,44 @@ def save_issues_to_json():
     chrome_options.add_argument("--start-maximized")  # 브라우저 최대화
     driver = webdriver.Chrome(options=chrome_options)
 
-    all_issues = []  # 모든 페이지의 데이터를 저장할 리스트
+    # 각 설정에 대해 크롤링 수행
+    for config in configs:
+        target_url = config["url"]
+        page = config["page"]
+        service = config["service"]
 
-    # 1000개 이슈 수집
-    for start_index in range(0, 41, 20):
-        paginated_url = f"{url}&startIndex={start_index}"
-        print(f"Fetching data from: {paginated_url}")
-        driver.get(paginated_url)
+        all_issues = []  # 모든 페이지의 데이터를 저장할 리스트
 
-        for cookie in cookies:
-            driver.add_cookie(cookie)
+        # 첫 번째 요청에서만 쿠키 설정
+        cookie_set = False
 
-        driver.refresh()  # 페이지 새로고침하여 쿠키 적용
+        # 이슈 수집
+        for start_index in range(0, page * 20, 20):
+            paginated_url = f"{target_url}&startIndex={start_index}"
+            print(f"Fetching data from: {paginated_url}")
+            driver.get(paginated_url)
 
-        issue_table = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
-        html_content = issue_table.get_attribute("outerHTML")  # HTML 가져오기
+            if not cookie_set:
+                for cookie in cookies:
+                    driver.add_cookie(cookie)
+                driver.refresh()  # 페이지 새로고침하여 쿠키 적용
+                cookie_set = True
 
-        issues = parse_issue_links(html_content)
-        all_issues.extend(issues)  # 각 페이지의 데이터를 리스트에 추가
+            issue_table = driver.find_element(By.CLASS_NAME, "issue-table-wrapper")
+            html_content = issue_table.get_attribute("outerHTML")  # HTML 가져오기
 
-    # JSON 파일로 저장
-    output_dir = "./issue_data"
-    os.makedirs(output_dir, exist_ok=True)
-    output_file = os.path.join(output_dir, "plane_issue.json")
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(all_issues, f, ensure_ascii=False, indent=4)
+            issues = parse_issue_links(html_content)
+            all_issues.extend(issues)  # 각 페이지의 데이터를 리스트에 추가
 
-    print(f"All issues have been saved to {output_file}")
+        # JSON 파일로 저장
+        output_dir = f"./issue_data/{service}"
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, "plane_issue.json")
+        with open(output_file, "w", encoding="utf-8") as f:
+            json.dump(all_issues, f, ensure_ascii=False, indent=4)
+
+        print(f"All issues have been saved to {output_file}")
+
     driver.quit()
 
 if __name__ == "__main__":
