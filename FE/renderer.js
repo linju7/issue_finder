@@ -155,8 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.target === modalOverlay) hideModal();
   });
 
-  // 검색 버튼 클릭
-  searchButton.addEventListener('click', async () => {
+  // 검색 실행 함수
+  const performSearch = async () => {
     const query = searchInput.value.trim();
     const auth = authInput.value.trim();
 
@@ -224,7 +224,20 @@ document.addEventListener('DOMContentLoaded', () => {
       setLoading(false);
       showLoadingOverlay(false);
     }
-  });
+  };
+
+  // 검색 버튼 클릭
+  searchButton.addEventListener('click', performSearch);
+
+  // 엔터키로 검색 실행
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      performSearch();
+    }
+  };
+
+  authInput.addEventListener('keydown', handleKeyDown);
+  searchInput.addEventListener('keydown', handleKeyDown);
 
   // 다시하기 버튼(결과화면) 클릭 시 초기화
   resetButton2.addEventListener('click', () => {
