@@ -9,11 +9,11 @@ BE/model_cache
 
 BE/all_search/__pycache__
 
-BS4/__pycache__
-BS4/crawling_target.py
-BS4/expand_keyword_map.py
-BS4/security.py
+Crawling/__pycache__
+Crawling/crawling_target.py
+Crawling/expand_keyword_map.py
+Crawling/security.py
 
-BS4/issue_data
+Crawling/issue_data
 
 BE/KR-SBERT-V40K-klueNLI-augSTS
