@@ -168,15 +168,85 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     let html = '';
-    keywords.forEach(keyword => {
+    keywords.forEach((keyword, index) => {
       html += `
-        <div class="keyword-item">
-          <div class="keyword-original">${keyword.original}</div>
-          <div class="keyword-expanded">${keyword.expanded}</div>
+        <div class="keyword-item" data-index="${index}" data-original="${keyword.original}" data-expanded="${keyword.expanded}">
+          <div class="keyword-content">
+            <div class="keyword-original">${keyword.original}</div>
+            <div class="keyword-expanded">${keyword.expanded}</div>
+          </div>
+          <div class="keyword-edit-form">
+            <input type="text" class="keyword-edit-input" id="edit-original-${index}" value="${keyword.original}">
+            <span class="keyword-edit-separator">⇄</span>
+            <input type="text" class="keyword-edit-input" id="edit-expanded-${index}" value="${keyword.expanded}">
+            <div class="keyword-edit-actions">
+              <button class="keyword-edit-btn confirm" onclick="confirmEdit(${index}, '${keyword.original}', '${keyword.expanded}')">확인</button>
+              <button class="keyword-edit-btn cancel" onclick="cancelEdit(${index})">취소</button>
+            </div>
+          </div>
+          <div class="keyword-actions">
+            <button class="keyword-action-btn edit" onclick="startEdit(${index})">수정</button>
+            <button class="keyword-action-btn delete" onclick="showDeleteModal('${keyword.original}', '${keyword.expanded}', ${index})">삭제</button>
+          </div>
         </div>
       `;
     });
     existingKeywordsContainer.innerHTML = html;
+
+    // 키워드 아이템 클릭 이벤트 추가
+    const keywordItems = existingKeywordsContainer.querySelectorAll('.keyword-item');
+    keywordItems.forEach(item => {
+      item.addEventListener('click', function(e) {
+        // 버튼이나 인풋 클릭은 무시
+        if (e.target.classList.contains('keyword-action-btn') || 
+            e.target.classList.contains('keyword-edit-btn') ||
+            e.target.classList.contains('keyword-edit-input')) {
+          return;
+        }
+        
+        // 편집 중이면 무시
+        if (this.classList.contains('editing')) {
+          return;
+        }
+        
+        // 다른 편집 중인 아이템들 종료
+        cancelAllEditing();
+        
+        // 다른 아이템들의 선택 해제
+        keywordItems.forEach(otherItem => {
+          if (otherItem !== this) {
+            otherItem.classList.remove('selected');
+          }
+        });
+        
+        // 현재 아이템 선택 토글
+        this.classList.toggle('selected');
+      });
+    });
+
+    // 전역 클릭 이벤트로 편집 모드 종료 (중복 방지)
+    if (!globalClickEventAdded) {
+      document.addEventListener('click', handleGlobalClick);
+      globalClickEventAdded = true;
+    }
+  };
+
+  // 전역 클릭 핸들러
+  const handleGlobalClick = (e) => {
+    // 키워드 컨테이너 외부 클릭 시 편집 모드 종료
+    if (!existingKeywordsContainer.contains(e.target)) {
+      cancelAllEditing();
+    }
+  };
+
+  // 모든 편집 모드 종료
+  const cancelAllEditing = () => {
+    document.querySelectorAll('.keyword-item.editing').forEach(item => {
+      const index = item.dataset.index;
+      if (index !== undefined) {
+        cancelEdit(parseInt(index));
+      }
+    });
   };
 
   // 키워드 조회 함수
@@ -253,20 +323,40 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (type === 'keyword-register-success') {
       title = '키워드가 성공적으로 등록되었습니다';
       desc = '키워드 확장이 정상적으로 등록되었습니다.';
+    } else if (type === 'keyword-empty') {
+      title = '키워드가 입력되지 않았어요';
+      desc = '원본 키워드와 확장 키워드를 모두 입력해주세요.';
+    } else if (type === 'keyword-update-error') {
+      title = '키워드 수정 중 오류가 발생했어요';
+      desc = '다시 시도해주세요. 문제가 지속되면 관리자에게 문의하세요.';
+    } else if (type === 'keyword-delete-error') {
+      title = '키워드 삭제 중 오류가 발생했어요';
+      desc = '다시 시도해주세요. 문제가 지속되면 관리자에게 문의하세요.';
+    } else if (type === 'keyword-duplicate') {
+      title = '이미 등록된 키워드입니다';
+      desc = '다른 키워드를 입력해주세요.';
+    } else if (type === 'keyword-register-error') {
+      title = '키워드 등록 중 오류가 발생했어요';
+      desc = '다시 시도해주세요. 문제가 지속되면 관리자에게 문의하세요.';
     }
     modalTitle.textContent = title;
     modalDesc.textContent = desc;
     modalOverlay.style.display = 'flex';
     document.body.classList.add('modal-open');
   }
+
   function hideModal() {
     modalOverlay.style.display = 'none';
     document.body.classList.remove('modal-open');
   }
+
   modalClose.addEventListener('click', hideModal);
   modalOverlay.addEventListener('click', (e) => {
     if (e.target === modalOverlay) hideModal();
   });
+
+  // 전역 클릭 이벤트 중복 방지 플래그
+  let globalClickEventAdded = false;
 
   // 검색 실행 함수
   const performSearch = async () => {
@@ -371,10 +461,15 @@ document.addEventListener('DOMContentLoaded', () => {
     showLoadingOverlay(true, '키워드를 등록하는 중');
 
     try {
-      const response = await fetch('/register-keyword', {
+      const response = await fetch('/expand/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ original, expanded, auth, service }),
+        body: JSON.stringify({ 
+          service_name: service,
+          original_keyword: original, 
+          expanded_keyword: expanded, 
+          auth: auth 
+        }),
       });
 
       if (!response.ok) {
@@ -384,39 +479,71 @@ document.addEventListener('DOMContentLoaded', () => {
           showLoadingOverlay(false);
           return;
         } else {
-          throw new Error(`Error: ${response.status}`);
+          const errorData = await response.json().catch(() => null);
+          const errorMessage = errorData?.detail || `서버 오류: ${response.status}`;
+          if (errorMessage.includes('already exists')) {
+            showModal('keyword-duplicate');
+          } else {
+            throw new Error(errorMessage);
+          }
+          showLoadingOverlay(false);
+          return;
         }
       }
 
       const data = await response.json();
       
-      // 등록 성공 시 결과 표시
-      keywordResultContainer.innerHTML = `
-        <div class="result-item result-default">
-          <div class="result-content">
-            <h3 class="result-title">등록 완료</h3>
-            <p>서비스: ${service}</p>
-            <p>원본: ${original}</p>
-            <p>확장: ${expanded}</p>
-          </div>
-        </div>
-      `;
+      // 등록 성공 시 성공 모달 표시
+      showKeywordSuccessModal(original, expanded);
       
-      setActiveSection('keyword-results');
-      showModal('keyword-register-success');
-      
-      // 등록 후 키워드 목록 새로고침
-      setTimeout(() => {
-        fetchExistingKeywords(service, auth);
-      }, 1000);
+      // 입력 필드 초기화
+      originalInput.value = '';
+      expandedInput.value = '';
+      clearInputError(originalInput);
+      clearInputError(expandedInput);
       
     } catch (error) {
-      keywordResultContainer.innerHTML = `<p class="error">오류 발생: ${error.message}</p>`;
-      setActiveSection('keyword-results');
+      showModal('keyword-register-error');
+      console.error('등록 오류:', error);
     } finally {
       showLoadingOverlay(false);
     }
   };
+
+  // 키워드 등록 성공 모달 표시
+  const showKeywordSuccessModal = (original, expanded) => {
+    const modal = document.getElementById('keyword-success-modal');
+    const preview = document.getElementById('keyword-success-preview');
+    
+    preview.textContent = `${original} ⇄ ${expanded}`;
+    modal.classList.add('show');
+  };
+
+  // 성공 모달 이벤트 설정
+  const successModal = document.getElementById('keyword-success-modal');
+  const successCloseBtn = document.getElementById('keyword-success-close');
+  
+  if (successModal && successCloseBtn) {
+    const closeSuccessModal = () => {
+      successModal.classList.remove('show');
+      // 모달이 닫힌 후 키워드 목록 새로고침
+      setTimeout(() => {
+        const currentService = keywordServiceSelect.value;
+        const currentAuth = keywordAuthInput.value.trim();
+        if (currentService && currentAuth) {
+          fetchExistingKeywords(currentService, currentAuth);
+        }
+      }, 300);
+    };
+    
+    successCloseBtn.addEventListener('click', closeSuccessModal);
+    
+    successModal.addEventListener('click', (e) => {
+      if (e.target === successModal) {
+        closeSuccessModal();
+      }
+    });
+  }
 
   // 검색 버튼 클릭
   searchButton.addEventListener('click', performSearch);
@@ -554,4 +681,192 @@ document.addEventListener('DOMContentLoaded', () => {
       setActiveSection('keyword');
     });
   }
+
+  // 키워드 수정 시작
+  window.startEdit = (index) => {
+    const item = document.querySelector(`[data-index="${index}"]`);
+    if (item) {
+      // 다른 편집 중인 아이템들 종료
+      cancelAllEditing();
+      
+      // 선택 상태 해제하고 편집 모드로 전환
+      item.classList.remove('selected');
+      item.classList.add('editing');
+      
+      // 첫 번째 입력 필드에 포커스
+      const firstInput = item.querySelector('.keyword-edit-input');
+      if (firstInput) {
+        setTimeout(() => firstInput.focus(), 100);
+      }
+      
+      // 엔터키와 ESC키 이벤트 추가
+      const inputs = item.querySelectorAll('.keyword-edit-input');
+      inputs.forEach(input => {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const originalKeyword = item.dataset.original;
+            const expandedKeyword = item.dataset.expanded;
+            confirmEdit(index, originalKeyword, expandedKeyword);
+          } else if (e.key === 'Escape') {
+            cancelEdit(index);
+          }
+        });
+      });
+    }
+  };
+
+  // 키워드 수정 확인
+  window.confirmEdit = async (index, originalKeyword, expandedKeyword) => {
+    const originalInput = document.getElementById(`edit-original-${index}`);
+    const expandedInput = document.getElementById(`edit-expanded-${index}`);
+    
+    if (!originalInput || !expandedInput) return;
+    
+    const newOriginal = originalInput.value.trim();
+    const newExpanded = expandedInput.value.trim();
+    
+    if (newOriginal === '' || newExpanded === '') {
+      showModal('keyword-empty');
+      return;
+    }
+    
+    // 변경사항이 없으면 편집 모드만 종료
+    if (newOriginal === originalKeyword && newExpanded === expandedKeyword) {
+      cancelEdit(index);
+      return;
+    }
+    
+    try {
+      showLoadingOverlay(true, '키워드를 수정하는 중');
+      
+      const response = await fetch('/expand/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_name: keywordServiceSelect.value,
+          original_keyword: originalKeyword,
+          expanded_keyword: expandedKeyword,
+          new_original: newOriginal,
+          new_expanded: newExpanded,
+          auth: keywordAuthInput.value.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          showModal('auth-wrong');
+          return;
+        }
+        throw new Error(`서버 오류: ${response.status}`);
+      }
+
+      // 성공 시 키워드 목록 새로고침
+      const currentService = keywordServiceSelect.value;
+      const currentAuth = keywordAuthInput.value.trim();
+      fetchExistingKeywords(currentService, currentAuth);
+      
+    } catch (error) {
+      showModal('keyword-update-error');
+      console.error('수정 오류:', error);
+    } finally {
+      showLoadingOverlay(false);
+    }
+  };
+
+  // 키워드 수정 취소
+  window.cancelEdit = (index) => {
+    const item = document.querySelector(`[data-index="${index}"]`);
+    if (item) {
+      item.classList.remove('editing');
+      
+      // 원래 값으로 되돌리기
+      const originalInput = document.getElementById(`edit-original-${index}`);
+      const expandedInput = document.getElementById(`edit-expanded-${index}`);
+      const originalValue = item.dataset.original;
+      const expandedValue = item.dataset.expanded;
+      
+      if (originalInput) originalInput.value = originalValue;
+      if (expandedInput) expandedInput.value = expandedValue;
+    }
+  };
+
+  // 삭제 모달 표시
+  window.showDeleteModal = (originalKeyword, expandedKeyword, index) => {
+    const modal = document.getElementById('keyword-delete-modal');
+    const preview = document.getElementById('keyword-delete-preview');
+    const confirmBtn = document.getElementById('keyword-delete-confirm');
+    
+    preview.textContent = `${originalKeyword} ⇄ ${expandedKeyword}`;
+    modal.classList.add('show');
+    
+    // 확인 버튼에 이벤트 설정 (기존 이벤트 제거 후 새로 추가)
+    const newConfirmBtn = confirmBtn.cloneNode(true);
+    confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+    
+    newConfirmBtn.addEventListener('click', () => {
+      modal.classList.remove('show');
+      deleteKeyword(index, originalKeyword, expandedKeyword);
+    });
+  };
+
+  // 삭제 모달 이벤트 설정
+  const deleteModal = document.getElementById('keyword-delete-modal');
+  const deleteCancelBtn = document.getElementById('keyword-delete-cancel');
+  
+  if (deleteModal && deleteCancelBtn) {
+    deleteCancelBtn.addEventListener('click', () => {
+      deleteModal.classList.remove('show');
+    });
+    
+    deleteModal.addEventListener('click', (e) => {
+      if (e.target === deleteModal) {
+        deleteModal.classList.remove('show');
+      }
+    });
+  }
+
+  // 키워드 삭제 함수 (기존 confirm 제거)
+  window.deleteKeyword = async (index, originalKeyword, expandedKeyword) => {
+    try {
+      showLoadingOverlay(true, '키워드를 삭제하는 중');
+      
+      const response = await fetch('/expand/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_name: keywordServiceSelect.value,
+          original_keyword: originalKeyword,
+          expanded_keyword: expandedKeyword,
+          auth: keywordAuthInput.value.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          showModal('auth-wrong');
+          return;
+        }
+        throw new Error(`서버 오류: ${response.status}`);
+      }
+
+      // 성공 시 애니메이션과 함께 UI에서 제거
+      const keywordItem = document.querySelector(`[data-index="${index}"]`);
+      if (keywordItem) {
+        keywordItem.style.opacity = '0';
+        keywordItem.style.transform = 'scale(0.95)';
+        
+        setTimeout(() => {
+          const currentService = keywordServiceSelect.value;
+          const currentAuth = keywordAuthInput.value.trim();
+          fetchExistingKeywords(currentService, currentAuth);
+        }, 300);
+      }
+      
+    } catch (error) {
+      showModal('keyword-delete-error');
+      console.error('삭제 오류:', error);
+    } finally {
+      showLoadingOverlay(false);
+    }
+  };
 });

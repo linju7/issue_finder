@@ -142,6 +142,30 @@
         <button class="modal-close" id="modal-close">확인</button>
       </div>
     </div>
+
+    <!-- 키워드 삭제 확인 모달 -->
+    <div id="keyword-delete-modal" class="keyword-delete-modal">
+      <div class="keyword-delete-box">
+        <div class="keyword-delete-title">키워드 삭제</div>
+        <div class="keyword-delete-desc">다음 키워드를 삭제하시겠습니까?</div>
+        <div class="keyword-delete-keyword" id="keyword-delete-preview"></div>
+        <div class="keyword-delete-actions">
+          <button class="keyword-delete-btn cancel" id="keyword-delete-cancel">취소</button>
+          <button class="keyword-delete-btn confirm" id="keyword-delete-confirm">삭제</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 키워드 등록 성공 모달 -->
+    <div id="keyword-success-modal" class="keyword-success-modal">
+      <div class="keyword-success-box">
+        <div class="keyword-success-icon">✓</div>
+        <div class="keyword-success-title">키워드가 등록되었습니다</div>
+        <div class="keyword-success-desc">새로운 키워드가 성공적으로 추가되었습니다.</div>
+        <div class="keyword-success-keyword" id="keyword-success-preview"></div>
+        <button class="keyword-success-btn" id="keyword-success-close">확인</button>
+      </div>
+    </div>
   </div>
   <script src="main.js"></script>
 </body>

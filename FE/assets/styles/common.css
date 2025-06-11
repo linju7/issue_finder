@@ -248,7 +248,7 @@ body {
   border-bottom: 2.5px solid #e0e0e0;
   border-radius: 0 !important;
   background: transparent !important;
-  font-size: 22px !important;
+  font-size: 18px !important;
   font-family: 'Pretendard', 'Inter', sans-serif !important;
   font-weight: 600 !important;
   color: #222 !important;
@@ -272,7 +272,7 @@ body {
 
 .service-select option {
   font-family: 'Pretendard', 'Inter', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #222;
   background: #fff;
@@ -376,14 +376,21 @@ body {
   margin: 0;
 }
 
-/* 키워드 아이템 스타일 */
+/* 키워드 아이템 스타일 - 좌우 배치로 변경 */
 .keyword-item {
   background: #fff;
   border-radius: 12px;
   padding: 16px 20px;
   margin-bottom: 12px;
   border: 1px solid #e8f3ff;
-  transition: all 0.2s;
+  transition: all 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
 }
 
 .keyword-item:hover {
@@ -391,17 +398,100 @@ body {
   box-shadow: 0 2px 8px rgba(49, 130, 246, 0.1);
 }
 
+/* 키워드 아이템 선택 시 모자이크 효과 */
+.keyword-item.selected {
+  position: relative;
+}
+
+.keyword-item.selected .keyword-content {
+  filter: blur(3px);
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.keyword-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  transition: all 0.3s;
+}
+
 .keyword-original {
   font-size: 16px;
   font-weight: 600;
   color: #3182f6;
-  margin-bottom: 4px;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  text-align: center;
 }
 
 .keyword-expanded {
+  font-size: 16px;
+  font-weight: 600;
+  color: #3182f6;
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  text-align: center;
+}
+
+/* 키워드 사이 구분선 */
+.keyword-content::after {
+  content: "⇄";
+  font-size: 16px;
+  color: #bdbdbd;
+  font-weight: 400;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  background: #fff;
+  padding: 0 8px;
+}
+
+/* 키워드 액션 버튼들 */
+.keyword-actions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  gap: 12px;
+  z-index: 10;
+}
+
+.keyword-item.selected .keyword-actions {
+  display: flex;
+}
+
+.keyword-action-btn {
+  background: #3182f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
   font-size: 14px;
-  color: #666;
-  font-weight: 500;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+}
+
+.keyword-action-btn:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.keyword-action-btn.delete {
+  background: #ef4444;
+}
+
+.keyword-action-btn.delete:hover {
+  background: #dc2626;
 }
 
 /* 반응형 디자인 */
@@ -1020,52 +1110,314 @@ body.modal-open .modal-overlay {
   font-weight: 600;
 }
 
-.service-select:not([value=""]):not([value=" "]) + .input-label {
+.service-select:not([value=""]):not([value=" "]):not(:disabled) + .input-label {
   color: #2575fc;
 }
 
 .service-select:disabled:not([value=""]):not([value=" "]) + .input-label {
-  color: #888 !important;
+  color: #2575fc !important;
 }
 
 /* readonly 인증키 입력 필드 label 애니메이션 */
 .auth-input[readonly]:not(:placeholder-shown) + .input-label {
   top: -2px;
   font-size: 13px;
-  color: #888 !important;
+  color: #2575fc !important;
   font-weight: 600;
 }
 
-/* 비활성화된 서비스 드롭다운 스타일 */
+/* 비활성화된 서비스 드롭다운 스타일 - 일반 UI 유지 */
 .service-select:disabled {
-  color: #888 !important;
-  background-color: #f5f5f5 !important;
   cursor: not-allowed !important;
-  border-bottom-color: #e0e0e0 !important;
+  /* 회색 처리 제거 - 일반 스타일 유지 */
 }
 
 .service-select:disabled + .input-label {
-  color: #888 !important;
+  /* label도 일반 색상 유지 */
 }
 
 .service-select:disabled ~ .select-arrow {
-  color: #ccc !important;
+  /* 화살표도 일반 색상 유지 */
 }
 
-/* readonly 인증키 입력 필드 스타일 */
+/* readonly 인증키 입력 필드 스타일 - 일반 UI 유지 */
 .auth-input[readonly] {
-  color: #888 !important;
-  background-color: #f5f5f5 !important;
   cursor: not-allowed !important;
-  border-bottom-color: #e0e0e0 !important;
+  /* 회색 처리 제거 - 일반 스타일 유지 */
 }
 
 .auth-input[readonly] + .input-label {
-  color: #888 !important;
+  /* label도 일반 색상 유지 */
 }
 
 /* 드롭다운 화살표 회전 애니메이션 */
 .service-select:focus ~ .select-arrow {
   color: #2575fc;
   transform: translateY(-50%) rotate(180deg);
+}
+
+/* 키워드 삭제 확인 모달 */
+.keyword-delete-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.keyword-delete-modal.show {
+  display: flex;
+}
+
+.keyword-delete-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+}
+
+.keyword-delete-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.keyword-delete-desc {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 24px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.keyword-delete-keyword {
+  background: #f8faff;
+  border: 1px solid #e8f3ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0;
+  text-align: center;
+  font-weight: 600;
+  color: #3182f6;
+}
+
+.keyword-delete-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.keyword-delete-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+}
+
+.keyword-delete-btn.cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.keyword-delete-btn.cancel:hover {
+  background: #e5e5e5;
+}
+
+.keyword-delete-btn.confirm {
+  background: #ef4444;
+  color: #fff;
+}
+
+.keyword-delete-btn.confirm:hover {
+  background: #dc2626;
+}
+
+/* 키워드 인라인 에디팅 */
+.keyword-item.editing {
+  background: #f8faff;
+  border-color: #3182f6;
+  min-height: 60px;
+  padding: 12px 20px;
+}
+
+.keyword-item.editing .keyword-content {
+  display: none;
+}
+
+.keyword-edit-form {
+  display: none;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  flex-wrap: nowrap;
+}
+
+.keyword-item.editing .keyword-edit-form {
+  display: flex;
+}
+
+.keyword-edit-input {
+  flex: 0 0 35%;
+  max-width: 35%;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #222;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.keyword-edit-input:focus {
+  border-color: #3182f6;
+}
+
+.keyword-edit-separator {
+  color: #bdbdbd;
+  font-size: 14px;
+  font-weight: 400;
+  flex: 0 0 auto;
+  margin: 0 4px;
+}
+
+.keyword-edit-actions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: 8px;
+}
+
+.keyword-edit-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+  white-space: nowrap;
+  min-width: 40px;
+}
+
+.keyword-edit-btn.confirm {
+  background: #3182f6;
+  color: #fff;
+}
+
+.keyword-edit-btn.confirm:hover {
+  background: #2563eb;
+}
+
+.keyword-edit-btn.cancel {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.keyword-edit-btn.cancel:hover {
+  background: #e5e5e5;
+}
+
+/* 키워드 등록 성공 모달 */
+.keyword-success-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.keyword-success-modal.show {
+  display: flex;
+}
+
+.keyword-success-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+  animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  text-align: center;
+}
+
+.keyword-success-icon {
+  width: 60px;
+  height: 60px;
+  background: #10b981;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  font-size: 24px;
+  color: #fff;
+}
+
+.keyword-success-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 12px;
+}
+
+.keyword-success-desc {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.keyword-success-keyword {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 16px 0 24px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.keyword-success-btn {
+  background: #3182f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+  min-width: 100px;
+}
+
+.keyword-success-btn:hover {
+  background: #2563eb;
 }
