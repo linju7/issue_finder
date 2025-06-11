@@ -28,7 +28,7 @@ body {
   text-align: center;
 }
 
-.form-section, .results-section {
+.form-section, .results-section, .keyword-section, .keyword-results-section {
   width: 100%;
   max-width: 720px;
   min-width: 340px;
@@ -54,7 +54,7 @@ body {
   margin: 40px auto 40px auto;
 }
 
-.results-section {
+.results-section, .keyword-results-section {
   max-width: 720px !important;
   width: 100%;
   padding: 48px 48px 40px 48px !important;
@@ -63,6 +63,13 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
+}
+
+.keyword-section {
+  max-width: 420px !important;
+  width: 100%;
+  padding: 48px 32px 40px 32px !important;
+  margin: 40px auto 40px auto;
 }
 
 .form-inner, .results-inner {
@@ -259,6 +266,31 @@ body {
 }
 .search-button:hover {
   background: #2563eb;
+}
+
+/* --- 키워드 관리 버튼 스타일 --- */
+.keyword-manage-button {
+  width: 100%;
+  height: 44px;
+  margin-top: 12px;
+  margin-bottom: 8px;
+  background: transparent;
+  color: #3182f6;
+  border: 2px solid #3182f6;
+  border-radius: 14px;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+  font-weight: 600;
+  font-size: 16px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: block;
+  letter-spacing: -0.5px;
+}
+.keyword-manage-button:hover {
+  background: #3182f6;
+  color: #fff;
+  box-shadow: 0 2px 8px 0 rgba(49,130,246,0.12);
 }
 
 /* --- 다시 검색하기 버튼 토스 스타일 --- */

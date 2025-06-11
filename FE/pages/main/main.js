@@ -1,10 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
   const searchButton = document.getElementById('search-button');
   const resetButton = document.getElementById('reset-button'); // 다시 검색하기 버튼
+  const keywordManageButton = document.getElementById('keyword-manage-button'); // 키워드 관리 버튼
   const searchInput = document.getElementById('search-input');
   const authInput = document.getElementById('auth-input');
   const resultContainer = document.getElementById('result-container');
   const paginationControls = document.getElementById('pagination-controls');
+  
+  // 키워드 관리 관련 요소들
+  const keywordAuthInput = document.getElementById('keyword-auth-input');
+  const originalInput = document.getElementById('original-input');
+  const expandedInput = document.getElementById('expanded-input');
+  const registerButton = document.getElementById('register-button');
+  const backToMainButton = document.getElementById('back-to-main-button');
+  const keywordResultContainer = document.getElementById('keyword-result-container');
+  const resetKeywordButton = document.getElementById('reset-keyword-button');
 
   let results = [];
   let currentPage = 0;
@@ -28,6 +38,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // section 참조
   const formSection = document.querySelector('.form-section');
   const resultsSection = document.querySelector('.results-section');
+  const keywordSection = document.querySelector('.keyword-section');
+  const keywordResultsSection = document.querySelector('.keyword-results-section');
   const loadingOverlay = document.getElementById('loading-overlay');
   const resetButton2 = document.getElementById('reset-button2');
   // 모달 관련
@@ -54,9 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 입력폼 포커스/블러 효과
-  [authInput, searchInput].forEach(input => {
-    input.addEventListener('focus', () => clearInputError(input));
-    input.addEventListener('input', () => clearInputError(input));
+  [authInput, searchInput, keywordAuthInput, originalInput, expandedInput].forEach(input => {
+    if (input) {
+      input.addEventListener('focus', () => clearInputError(input));
+      input.addEventListener('input', () => clearInputError(input));
+    }
   });
 
   // 결과 fade 효과
@@ -72,17 +86,40 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => resultContainer.classList.remove('fade-in'), 350);
   }
 
-  // section 전환 함수 (중앙 단일 박스 전환)
+  // section 전환 함수 (모든 섹션 제어)
   function setActiveSection(active) {
-    formSection.style.display = (active === 'form') ? 'flex' : 'none';
-    resultsSection.style.display = (active === 'results') ? 'flex' : 'none';
+    // 모든 섹션 숨기기
+    formSection.style.display = 'none';
+    resultsSection.style.display = 'none';
+    keywordSection.style.display = 'none';
+    keywordResultsSection.style.display = 'none';
+    
+    // 선택된 섹션만 보이기
+    switch(active) {
+      case 'form':
+        formSection.style.display = 'flex';
+        break;
+      case 'results':
+        resultsSection.style.display = 'flex';
+        break;
+      case 'keyword':
+        keywordSection.style.display = 'flex';
+        break;
+      case 'keyword-results':
+        keywordResultsSection.style.display = 'flex';
+        break;
+    }
   }
 
   // 최초 진입 시 검색폼만 중앙에 표시
   setActiveSection('form');
 
   // Toss 스타일 로딩 오버레이
-  function showLoadingOverlay(show) {
+  function showLoadingOverlay(show, message = '이슈를 찾는 중') {
+    const loadingText = document.getElementById('loading-text');
+    if (loadingText) {
+      loadingText.innerHTML = `${message}<span class="loading-dots"><span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span></span>`;
+    }
     loadingOverlay.style.display = show ? 'flex' : 'none';
   }
 
@@ -140,6 +177,15 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (type === 'search-empty') {
       title = '검색어가 입력되지 않았어요';
       desc = '검색어에 찾고자 하는 이슈를 설명해주세요';
+    } else if (type === 'keyword-original-empty') {
+      title = '원본 키워드가 입력되지 않았어요';
+      desc = '원본 키워드를 입력해주세요';
+    } else if (type === 'keyword-expanded-empty') {
+      title = '확장 키워드가 입력되지 않았어요';
+      desc = '확장 키워드를 입력해주세요';
+    } else if (type === 'keyword-register-success') {
+      title = '키워드가 성공적으로 등록되었습니다';
+      desc = '키워드 확장이 정상적으로 등록되었습니다.';
     }
     modalTitle.textContent = title;
     modalDesc.textContent = desc;
@@ -226,6 +272,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // 키워드 등록 실행 함수
+  const performKeywordRegister = async () => {
+    const auth = keywordAuthInput.value.trim();
+    const original = originalInput.value.trim();
+    const expanded = expandedInput.value.trim();
+
+    // 에러 표시 초기화
+    keywordAuthInput.classList.remove('error');
+    originalInput.classList.remove('error');
+    expandedInput.classList.remove('error');
+
+    // 입력값 체크 및 모달
+    if (!auth) {
+      keywordAuthInput.classList.add('error');
+      showModal('auth-empty');
+      return;
+    }
+    if (!original) {
+      originalInput.classList.add('error');
+      showModal('keyword-original-empty');
+      return;
+    }
+    if (!expanded) {
+      expandedInput.classList.add('error');
+      showModal('keyword-expanded-empty');
+      return;
+    }
+
+    showLoadingOverlay(true, '키워드를 등록하는 중');
+
+    try {
+      const response = await fetch('/register-keyword', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ original, expanded, auth }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          keywordAuthInput.classList.add('error');
+          showModal('auth-wrong');
+          showLoadingOverlay(false);
+          return;
+        } else {
+          throw new Error(`Error: ${response.status}`);
+        }
+      }
+
+      const data = await response.json();
+      
+      // 등록 성공 시 결과 표시
+      keywordResultContainer.innerHTML = `
+        <div class="result-item result-default">
+          <div class="result-content">
+            <h3 class="result-title">등록 완료</h3>
+            <p>원본: ${original}</p>
+            <p>확장: ${expanded}</p>
+          </div>
+        </div>
+      `;
+      
+      setActiveSection('keyword-results');
+      showModal('keyword-register-success');
+      
+    } catch (error) {
+      keywordResultContainer.innerHTML = `<p class="error">오류 발생: ${error.message}</p>`;
+      setActiveSection('keyword-results');
+    } finally {
+      showLoadingOverlay(false);
+    }
+  };
+
   // 검색 버튼 클릭
   searchButton.addEventListener('click', performSearch);
 
@@ -236,8 +354,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  // 키워드 등록 엔터키 핸들러
+  const handleKeywordKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      performKeywordRegister();
+    }
+  };
+
   authInput.addEventListener('keydown', handleKeyDown);
   searchInput.addEventListener('keydown', handleKeyDown);
+
+  // 키워드 입력 필드들에 엔터키 이벤트 추가
+  if (keywordAuthInput) keywordAuthInput.addEventListener('keydown', handleKeywordKeyDown);
+  if (originalInput) originalInput.addEventListener('keydown', handleKeywordKeyDown);
+  if (expandedInput) expandedInput.addEventListener('keydown', handleKeywordKeyDown);
 
   // 다시하기 버튼(결과화면) 클릭 시 초기화
   resetButton2.addEventListener('click', () => {
@@ -250,16 +380,62 @@ document.addEventListener('DOMContentLoaded', () => {
     clearInputError(authInput);
     clearInputError(searchInput);
     setActiveSection('form');
-    searchInput.focus();
   });
 
-  // 기존 resetButton(입력폼)도 동작 유지
-  resetButton.addEventListener('click', () => {
-    resultContainer.innerHTML = '';
-    paginationControls.innerHTML = '';
-    searchInput.value = '';
-    clearInputError(authInput);
-    clearInputError(searchInput);
-    resetButton.style.display = 'none';
+  // 기존 resetButton(입력폼)도 동작 유지 (만약 존재한다면)
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      resultContainer.innerHTML = '';
+      if (paginationControls) paginationControls.innerHTML = '';
+      searchInput.value = '';
+      clearInputError(authInput);
+      clearInputError(searchInput);
+      resetButton.style.display = 'none';
+    });
+  }
+
+  // 키워드 관리 버튼 클릭 이벤트 - 키워드 섹션으로 전환
+  keywordManageButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('키워드 관리 섹션으로 전환');
+    
+    // 키워드 입력 필드 초기화
+    if (keywordAuthInput) keywordAuthInput.value = '';
+    if (originalInput) originalInput.value = '';
+    if (expandedInput) expandedInput.value = '';
+    
+    // 에러 상태 초기화
+    clearInputError(keywordAuthInput);
+    clearInputError(originalInput);
+    clearInputError(expandedInput);
+    
+    setActiveSection('keyword');
   });
+
+  // 키워드 등록 버튼 클릭
+  if (registerButton) {
+    registerButton.addEventListener('click', performKeywordRegister);
+  }
+
+  // 뒤로가기 버튼 (키워드 섹션에서 검색 폼으로)
+  if (backToMainButton) {
+    backToMainButton.addEventListener('click', () => {
+      setActiveSection('form');
+    });
+  }
+
+  // 새로 등록하기 버튼 (키워드 결과에서 키워드 폼으로)
+  if (resetKeywordButton) {
+    resetKeywordButton.addEventListener('click', () => {
+      keywordResultContainer.innerHTML = '';
+      if (keywordAuthInput) keywordAuthInput.value = '';
+      if (originalInput) originalInput.value = '';
+      if (expandedInput) expandedInput.value = '';
+      clearInputError(keywordAuthInput);
+      clearInputError(originalInput);
+      clearInputError(expandedInput);
+      setActiveSection('keyword');
+    });
+  }
 });
