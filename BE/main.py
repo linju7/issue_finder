@@ -27,6 +27,7 @@ async def search_api(request: Request):
     # 검색 실행
     try:
         response = search(target)
+        print(f'검색 내용 : {target}')
     except Exception as e:
         print(e)  # 에러 메시지 출력
         raise HTTPException(status_code=500, detail=str(e))
