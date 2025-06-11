@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultContainer = document.getElementById('result-container');
   const paginationControls = document.getElementById('pagination-controls');
   
+  // 서비스 선택 드롭다운
+  const serviceSelect = document.getElementById('service-select');
+  const keywordServiceSelect = document.getElementById('keyword-service-select');
+  
   // 키워드 관리 관련 요소들
   const keywordAuthInput = document.getElementById('keyword-auth-input');
   const originalInput = document.getElementById('original-input');
@@ -15,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const backToMainButton = document.getElementById('back-to-main-button');
   const keywordResultContainer = document.getElementById('keyword-result-container');
   const resetKeywordButton = document.getElementById('reset-keyword-button');
+  const existingKeywordsContainer = document.getElementById('existing-keywords-container');
 
   let results = [];
   let currentPage = 0;
@@ -66,10 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 입력폼 포커스/블러 효과
-  [authInput, searchInput, keywordAuthInput, originalInput, expandedInput].forEach(input => {
+  [authInput, searchInput, originalInput, expandedInput, serviceSelect].forEach(input => {
     if (input) {
       input.addEventListener('focus', () => clearInputError(input));
       input.addEventListener('input', () => clearInputError(input));
+      if (input.tagName === 'SELECT') {
+        input.addEventListener('change', () => clearInputError(input));
+      }
     }
   });
 
@@ -152,6 +160,62 @@ document.addEventListener('DOMContentLoaded', () => {
     resultContainer.appendChild(sentinel);
   };
 
+  // 키워드 목록 렌더링
+  const renderExistingKeywords = (keywords) => {
+    if (!keywords || keywords.length === 0) {
+      existingKeywordsContainer.innerHTML = '<p class="no-keywords">등록된 키워드가 없습니다.</p>';
+      return;
+    }
+
+    let html = '';
+    keywords.forEach(keyword => {
+      html += `
+        <div class="keyword-item">
+          <div class="keyword-original">${keyword.original}</div>
+          <div class="keyword-expanded">${keyword.expanded}</div>
+        </div>
+      `;
+    });
+    existingKeywordsContainer.innerHTML = html;
+  };
+
+  // 키워드 조회 함수
+  const fetchExistingKeywords = async (serviceName, authKey) => {
+    if (!serviceName || !authKey) {
+      existingKeywordsContainer.innerHTML = '<p class="no-keywords">서비스와 인증키를 선택해주세요.</p>';
+      return;
+    }
+
+    showLoadingOverlay(true, '확장 키워드를 조회하는 중');
+
+    try {
+      const response = await fetch('/expand/retrieve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          service_name: serviceName, 
+          auth: authKey 
+        }),
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('인증키가 올바르지 않습니다.');
+        } else {
+          throw new Error(`서버 오류: ${response.status}`);
+        }
+      }
+
+      const data = await response.json();
+      renderExistingKeywords(data.keywords);
+      
+    } catch (error) {
+      existingKeywordsContainer.innerHTML = `<p class="no-keywords error">오류: ${error.message}</p>`;
+    } finally {
+      showLoadingOverlay(false);
+    }
+  };
+
   // 무한 스크롤 IntersectionObserver (result-container 내부 스크롤)
   const sentinel = document.createElement('div');
   sentinel.style.height = '1px';
@@ -177,6 +241,9 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (type === 'search-empty') {
       title = '검색어가 입력되지 않았어요';
       desc = '검색어에 찾고자 하는 이슈를 설명해주세요';
+    } else if (type === 'service-empty') {
+      title = '서비스가 선택되지 않았어요';
+      desc = '서비스를 선택해주세요';
     } else if (type === 'keyword-original-empty') {
       title = '원본 키워드가 입력되지 않았어요';
       desc = '원본 키워드를 입력해주세요';
@@ -211,12 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
     searchInput.classList.remove('error');
 
     // 입력값 체크 및 모달
-    if (!auth && !query) {
-      authInput.classList.add('error');
-      searchInput.classList.add('error');
-      showModal('auth-empty');
-      return;
-    }
     if (!auth) {
       authInput.classList.add('error');
       showModal('auth-empty');
@@ -277,13 +338,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const auth = keywordAuthInput.value.trim();
     const original = originalInput.value.trim();
     const expanded = expandedInput.value.trim();
+    const service = keywordServiceSelect.value;
 
     // 에러 표시 초기화
+    keywordServiceSelect.classList.remove('error');
     keywordAuthInput.classList.remove('error');
     originalInput.classList.remove('error');
     expandedInput.classList.remove('error');
 
     // 입력값 체크 및 모달
+    if (!service) {
+      keywordServiceSelect.classList.add('error');
+      showModal('service-empty');
+      return;
+    }
     if (!auth) {
       keywordAuthInput.classList.add('error');
       showModal('auth-empty');
@@ -306,7 +374,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch('/register-keyword', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ original, expanded, auth }),
+        body: JSON.stringify({ original, expanded, auth, service }),
       });
 
       if (!response.ok) {
@@ -327,6 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="result-item result-default">
           <div class="result-content">
             <h3 class="result-title">등록 완료</h3>
+            <p>서비스: ${service}</p>
             <p>원본: ${original}</p>
             <p>확장: ${expanded}</p>
           </div>
@@ -335,6 +404,11 @@ document.addEventListener('DOMContentLoaded', () => {
       
       setActiveSection('keyword-results');
       showModal('keyword-register-success');
+      
+      // 등록 후 키워드 목록 새로고침
+      setTimeout(() => {
+        fetchExistingKeywords(service, auth);
+      }, 1000);
       
     } catch (error) {
       keywordResultContainer.innerHTML = `<p class="error">오류 발생: ${error.message}</p>`;
@@ -364,8 +438,7 @@ document.addEventListener('DOMContentLoaded', () => {
   authInput.addEventListener('keydown', handleKeyDown);
   searchInput.addEventListener('keydown', handleKeyDown);
 
-  // 키워드 입력 필드들에 엔터키 이벤트 추가
-  if (keywordAuthInput) keywordAuthInput.addEventListener('keydown', handleKeywordKeyDown);
+  // 키워드 입력 필드들에 엔터키 이벤트 추가 (readonly/disabled 필드 제외)
   if (originalInput) originalInput.addEventListener('keydown', handleKeywordKeyDown);
   if (expandedInput) expandedInput.addEventListener('keydown', handleKeywordKeyDown);
 
@@ -398,20 +471,54 @@ document.addEventListener('DOMContentLoaded', () => {
   keywordManageButton.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const selectedService = serviceSelect.value;
+    const selectedAuth = authInput.value.trim();
+    
+    // 서비스와 인증키 검증
+    if (!selectedService) {
+      serviceSelect.classList.add('error');
+      showModal('service-empty');
+      return;
+    }
+    if (!selectedAuth) {
+      authInput.classList.add('error');
+      showModal('auth-empty');
+      return;
+    }
+    
     console.log('키워드 관리 섹션으로 전환');
     
-    // 키워드 입력 필드 초기화
-    if (keywordAuthInput) keywordAuthInput.value = '';
+    // 메인에서 선택한 값들을 키워드 섹션으로 전달
+    if (keywordServiceSelect) keywordServiceSelect.value = selectedService;
+    if (keywordAuthInput) keywordAuthInput.value = selectedAuth;
     if (originalInput) originalInput.value = '';
     if (expandedInput) expandedInput.value = '';
     
     // 에러 상태 초기화
+    clearInputError(keywordServiceSelect);
     clearInputError(keywordAuthInput);
     clearInputError(originalInput);
     clearInputError(expandedInput);
     
+    // 서비스명 표시 업데이트
+    updateServiceDisplay(selectedService);
+    
+    // 키워드 조회 실행
+    fetchExistingKeywords(selectedService, selectedAuth);
+    
     setActiveSection('keyword');
   });
+
+  // 서비스명 표시 업데이트 함수
+  const updateServiceDisplay = (serviceName) => {
+    const serviceDisplayElement = existingKeywordsContainer.parentElement.querySelector('.guide-title');
+    if (serviceDisplayElement) {
+      const displayName = serviceName === 'contact' ? 'Contact' : 
+                         serviceName === 'pc_app' ? 'PC App' : serviceName;
+      serviceDisplayElement.textContent = `${displayName} 서비스의 등록된 키워드`;
+    }
+  };
 
   // 키워드 등록 버튼 클릭
   if (registerButton) {
@@ -421,6 +528,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 뒤로가기 버튼 (키워드 섹션에서 검색 폼으로)
   if (backToMainButton) {
     backToMainButton.addEventListener('click', () => {
+      // 메인 페이지의 서비스와 인증키 초기화하지 않음 (유지)
       setActiveSection('form');
     });
   }
@@ -429,12 +537,20 @@ document.addEventListener('DOMContentLoaded', () => {
   if (resetKeywordButton) {
     resetKeywordButton.addEventListener('click', () => {
       keywordResultContainer.innerHTML = '';
-      if (keywordAuthInput) keywordAuthInput.value = '';
+      // 서비스와 인증키는 유지, 키워드 입력만 초기화
       if (originalInput) originalInput.value = '';
       if (expandedInput) expandedInput.value = '';
-      clearInputError(keywordAuthInput);
       clearInputError(originalInput);
       clearInputError(expandedInput);
+      
+      // 현재 서비스로 키워드 목록 다시 조회
+      const currentService = keywordServiceSelect.value;
+      const currentAuth = keywordAuthInput.value.trim();
+      if (currentService && currentAuth) {
+        updateServiceDisplay(currentService);
+        fetchExistingKeywords(currentService, currentAuth);
+      }
+      
       setActiveSection('keyword');
     });
   }
