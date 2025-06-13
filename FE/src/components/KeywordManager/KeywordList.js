@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import EditKeywordModal from './EditKeywordModal';
 
 const Container = styled.div`
   max-height: 400px;
@@ -66,20 +67,6 @@ const KeywordItem = styled.div`
     filter: blur(3px);
     opacity: 0.3;
     pointer-events: none;
-  }
-
-  &.editing {
-    cursor: default;
-    border-color: #3182f6;
-    box-shadow: 0 4px 16px rgba(49, 130, 246, 0.15);
-  }
-
-  &.editing .keyword-content {
-    display: none;
-  }
-
-  &.editing .keyword-edit-form {
-    display: flex;
   }
 `;
 
@@ -149,88 +136,19 @@ const ActionButton = styled.button`
   }
 `;
 
-const KeywordEditForm = styled.div`
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: none;
-  align-items: center;
-  gap: 12px;
-  width: calc(100% - 40px);
-  z-index: 10;
 
-  ${KeywordItem}.editing & {
-    display: flex;
-  }
-`;
-
-const EditInput = styled.input`
-  flex: 1;
-  background: #fff;
-  border: 2px solid #3182f6;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #333;
-  outline: none;
-  font-family: 'Pretendard', 'Inter', sans-serif;
-
-  &:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(49, 130, 246, 0.2);
-  }
-`;
-
-const EditSeparator = styled.span`
-  font-size: 16px;
-  color: #3182f6;
-  font-weight: 600;
-  padding: 0 4px;
-`;
-
-const EditActions = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-`;
-
-const EditButton = styled.button`
-  background: ${props => props.variant === 'cancel' ? '#f8f9fa' : '#3182f6'};
-  color: ${props => props.variant === 'cancel' ? '#333' : '#fff'};
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-family: 'Pretendard', 'Inter', sans-serif;
-
-  &:hover {
-    background: ${props => props.variant === 'cancel' ? '#e9ecef' : '#2563eb'};
-  }
-`;
 
 const KeywordList = ({ keywords, loading, onUpdate, onDelete }) => {
   const [selectedIndex, setSelectedIndex] = useState(null);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editValues, setEditValues] = useState({ original: '', expanded: '' });
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingKeyword, setEditingKeyword] = useState(null);
+  const [editLoading, setEditLoading] = useState(false);
 
   const handleItemClick = (index, e) => {
-    // 버튼이나 인풋 클릭은 무시
-    if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') {
+    // 버튼 클릭은 무시
+    if (e.target.tagName === 'BUTTON') {
       return;
     }
-    
-    // 편집 중이면 무시
-    if (editingIndex === index) {
-      return;
-    }
-    
-    // 편집 중인 다른 아이템들 종료
-    setEditingIndex(null);
     
     // 현재 아이템 선택 토글
     setSelectedIndex(selectedIndex === index ? null : index);
@@ -238,31 +156,32 @@ const KeywordList = ({ keywords, loading, onUpdate, onDelete }) => {
 
   const startEdit = (index) => {
     const keyword = keywords[index];
-    setEditValues({
-      original: keyword.original,
-      expanded: keyword.expanded
-    });
-    setEditingIndex(index);
+    setEditingKeyword(keyword);
+    setEditModalOpen(true);
     setSelectedIndex(null);
   };
 
-  const cancelEdit = () => {
-    setEditingIndex(null);
-    setEditValues({ original: '', expanded: '' });
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingKeyword(null);
+    setEditLoading(false);
   };
 
-  const confirmEdit = async (index) => {
-    const keyword = keywords[index];
+  const handleEditSave = async (newOriginal, newExpanded) => {
+    if (!editingKeyword) return;
+    
+    setEditLoading(true);
     const success = await onUpdate(
-      keyword.original,
-      keyword.expanded,
-      editValues.original.trim(),
-      editValues.expanded.trim()
+      editingKeyword.original,
+      editingKeyword.expanded,
+      newOriginal,
+      newExpanded
     );
     
     if (success) {
-      setEditingIndex(null);
-      setEditValues({ original: '', expanded: '' });
+      closeEditModal();
+    } else {
+      setEditLoading(false);
     }
   };
 
@@ -272,14 +191,6 @@ const KeywordList = ({ keywords, loading, onUpdate, onDelete }) => {
     
     if (success) {
       setSelectedIndex(null);
-    }
-  };
-
-  const handleEditKeyDown = (e, index) => {
-    if (e.key === 'Enter') {
-      confirmEdit(index);
-    } else if (e.key === 'Escape') {
-      cancelEdit();
     }
   };
 
@@ -300,47 +211,35 @@ const KeywordList = ({ keywords, loading, onUpdate, onDelete }) => {
   }
 
   return (
-    <Container>
-      {keywords.map((keyword, index) => (
-        <KeywordItem
-          key={index}
-          className={`${selectedIndex === index ? 'selected' : ''} ${editingIndex === index ? 'editing' : ''}`}
-          onClick={(e) => handleItemClick(index, e)}
-        >
-          <KeywordContent className="keyword-content">
-            <KeywordText>{keyword.original}</KeywordText>
-            <KeywordText>{keyword.expanded}</KeywordText>
-          </KeywordContent>
+    <>
+      <Container>
+        {keywords.map((keyword, index) => (
+          <KeywordItem
+            key={index}
+            className={selectedIndex === index ? 'selected' : ''}
+            onClick={(e) => handleItemClick(index, e)}
+          >
+            <KeywordContent className="keyword-content">
+              <KeywordText>{keyword.original}</KeywordText>
+              <KeywordText>{keyword.expanded}</KeywordText>
+            </KeywordContent>
 
-          <KeywordActions className="keyword-actions">
-            <ActionButton onClick={() => startEdit(index)}>수정</ActionButton>
-            <ActionButton variant="delete" onClick={() => handleDelete(index)}>삭제</ActionButton>
-          </KeywordActions>
+            <KeywordActions className="keyword-actions">
+              <ActionButton onClick={() => startEdit(index)}>수정</ActionButton>
+              <ActionButton variant="delete" onClick={() => handleDelete(index)}>삭제</ActionButton>
+            </KeywordActions>
+          </KeywordItem>
+        ))}
+      </Container>
 
-          <KeywordEditForm className="keyword-edit-form">
-            <EditInput
-              type="text"
-              value={editValues.original}
-              onChange={(e) => setEditValues(prev => ({ ...prev, original: e.target.value }))}
-              onKeyDown={(e) => handleEditKeyDown(e, index)}
-              placeholder="원본 키워드"
-            />
-            <EditSeparator>⇄</EditSeparator>
-            <EditInput
-              type="text"
-              value={editValues.expanded}
-              onChange={(e) => setEditValues(prev => ({ ...prev, expanded: e.target.value }))}
-              onKeyDown={(e) => handleEditKeyDown(e, index)}
-              placeholder="확장 키워드"
-            />
-            <EditActions>
-              <EditButton onClick={() => confirmEdit(index)}>확인</EditButton>
-              <EditButton variant="cancel" onClick={cancelEdit}>취소</EditButton>
-            </EditActions>
-          </KeywordEditForm>
-        </KeywordItem>
-      ))}
-    </Container>
+      <EditKeywordModal
+        show={editModalOpen}
+        keyword={editingKeyword}
+        onClose={closeEditModal}
+        onSave={handleEditSave}
+        loading={editLoading}
+      />
+    </>
   );
 };
 

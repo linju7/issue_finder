@@ -66,6 +66,7 @@ const App = () => {
   const [resultsLoading, setResultsLoading] = useState(false);
   const [modal, setModal] = useState({ show: false, type: '', title: '', description: '' });
   const [searchData, setSearchData] = useState({ service: '', auth: '', search: '' });
+  const [searchFormErrors, setSearchFormErrors] = useState({ service: false, auth: false, search: false });
 
   const showModal = (type) => {
     const modalData = MODAL_TYPES[type];
@@ -80,7 +81,16 @@ const App = () => {
   };
 
   const closeModal = () => {
+    // 에러 모달이 아닐 때만 에러 상태 초기화
+    const errorModalTypes = ['auth-empty', 'auth-wrong', 'search-empty', 'service-empty'];
+    if (!modal.type || !errorModalTypes.includes(modal.type)) {
+      setSearchFormErrors({ service: false, auth: false, search: false });
+    }
     setModal({ show: false, type: '', title: '', description: '' });
+  };
+
+  const clearSearchFormError = (field) => {
+    setSearchFormErrors(prev => ({ ...prev, [field]: false }));
   };
 
   const performSearch = async (formData) => {
@@ -100,6 +110,7 @@ const App = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
+          setSearchFormErrors({ service: false, auth: true, search: false });
           showModal('auth-wrong');
           return;
         } else {
@@ -122,8 +133,52 @@ const App = () => {
     }
   };
 
-  const handleKeywordManage = () => {
-    setCurrentView('keyword');
+  const handleKeywordManage = async (formData) => {
+    // 서비스와 인증키 검증
+    if (!formData.service) {
+      setSearchFormErrors({ service: true, auth: false, search: false });
+      showModal('service-empty');
+      return;
+    }
+    
+    if (!formData.auth || !formData.auth.trim()) {
+      setSearchFormErrors({ service: false, auth: true, search: false });
+      showModal('auth-empty');
+      return;
+    }
+    
+    // 로딩 시작
+    setLoadingMessage('인증키를 확인하는 중');
+    setLoading(true);
+    
+    try {
+      // 인증키 검증을 위한 API 호출
+      const response = await fetch('/expand/retrieve', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          service_name: formData.service, 
+          auth: formData.auth 
+        }),
+      });
+
+      if (response.ok) {
+        // 검증 통과 시 키워드 관리 화면으로 이동
+        setSearchData(formData);
+        setCurrentView('keyword');
+      } else if (response.status === 401) {
+        setSearchFormErrors({ service: false, auth: true, search: false });
+        showModal('auth-wrong');
+      } else {
+        setSearchFormErrors({ service: false, auth: true, search: false });
+        showModal('auth-wrong');
+      }
+    } catch (error) {
+      console.error('인증키 검증 오류:', error);
+      showModal('auth-wrong');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleBackToSearch = () => {
@@ -143,6 +198,9 @@ const App = () => {
           show={currentView === 'search'}
           onSearch={performSearch}
           onKeywordManage={handleKeywordManage}
+          showModal={showModal}
+          externalErrors={searchFormErrors}
+          clearExternalError={clearSearchFormError}
         />
         
         <ResultsList 
@@ -157,6 +215,7 @@ const App = () => {
           onBack={handleBackToSearch}
           initialService={searchData.service}
           initialAuth={searchData.auth}
+          showModal={showModal}
         />
       </Container>
 
