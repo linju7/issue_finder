@@ -7,18 +7,18 @@ const Overlay = styled.div`
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(255, 255, 255, 0.85);
   display: ${props => props.show ? 'flex' : 'none'};
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  backdrop-filter: blur(3px);
+  backdrop-filter: blur(8px);
 `;
 
 const LoadingText = styled.span`
   font-size: 18px;
   font-weight: 600;
-  color: #fff;
+  color: #3182f6;
   font-family: 'Pretendard', 'Inter', sans-serif;
   text-align: center;
   letter-spacing: -0.5px;
@@ -34,7 +34,7 @@ const LoadingDot = styled.span`
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #fff;
+  background: #3182f6;
   margin: 0 2px;
   animation: bounce 1.4s infinite ease-in-out both;
   

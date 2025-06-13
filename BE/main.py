@@ -5,6 +5,7 @@ from expand_keyword.retrieve_expanded_keyword import retrieve_expanded_keyword
 from expand_keyword.update_expanded_keyword import update_expanded_keyword
 from expand_keyword.delete_expanded_keyword import delete_expanded_keyword
 from expand_keyword.create_expanded_keyword import create_expanded_keyword
+from datetime import datetime
 
 app = FastAPI()
 
@@ -31,7 +32,7 @@ async def search_api(request: Request):
     # 검색 실행
     try:
         response = search(target)
-        print(f'검색 내용 : {target}')
+        print(f'검색 내용 : {target}, 검색한 시각 : {datetime.now()}')
     except Exception as e:
         print(e)  # 에러 메시지 출력
         raise HTTPException(status_code=500, detail=str(e))

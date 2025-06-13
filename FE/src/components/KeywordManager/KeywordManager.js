@@ -9,13 +9,116 @@ import {
   InputGroup,
   InputLabel,
   Input,
-  SelectWrapper,
-  Select,
-  SelectArrow,
   Button,
   SearchForm as SearchFormDiv
 } from '../../styles/CommonStyles';
 import KeywordList from './KeywordList';
+
+const CustomSelectWrapper = styled.div`
+  position: relative;
+  width: 100%;
+`;
+
+const CustomSelectButton = styled.button`
+  width: 100%;
+  border: none;
+  border-bottom: 2.5px solid ${props => props.error ? '#ff4d4f' : props.focused ? '#2575fc' : '#e0e0e0'};
+  border-radius: 0;
+  background: transparent;
+  font-size: 22px;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+  font-weight: 600;
+  color: ${props => props.hasValue ? '#222' : '#bdbdbd'};
+  letter-spacing: 0.5px;
+  padding: 16px 0 8px 0;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s, color 0.3s;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+
+  &.error {
+    border-bottom: 2.5px solid #ff4d4f;
+    animation: shake 0.25s linear 2;
+  }
+
+  &:disabled {
+    color: #bdbdbd;
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+`;
+
+const CustomSelectText = styled.span`
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 8px;
+  color: inherit;
+`;
+
+const CustomSelectArrow = styled.div`
+  color: ${props => props.focused ? '#2575fc' : '#bdbdbd'};
+  transition: color 0.3s, transform 0.3s;
+  transform: ${props => props.isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 12px;
+    height: 8px;
+  }
+`;
+
+const CustomSelectDropdown = styled.div`
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 4px;
+  opacity: ${props => props.isOpen ? 1 : 0};
+  visibility: ${props => props.isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: all 0.2s ease;
+`;
+
+const CustomSelectOption = styled.div`
+  padding: 12px 16px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: 'Pretendard', 'Inter', sans-serif;
+
+  &:hover {
+    background-color: #f8faff;
+    color: #3182f6;
+  }
+
+  &:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+
+  &:last-child {
+    border-radius: 0 0 12px 12px;
+  }
+
+  &:only-child {
+    border-radius: 12px;
+  }
+`;
 
 const KeywordLayout = styled.div`
   display: flex;
@@ -53,7 +156,7 @@ const KeywordRight = styled.div`
   }
 `;
 
-const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
+const KeywordManager = ({ show, onBack, initialService, initialAuth, showModal }) => {
   const [formData, setFormData] = useState({
     service: initialService || '',
     auth: initialAuth || '',
@@ -74,6 +177,7 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
   });
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   // 초기 데이터 설정
   useEffect(() => {
@@ -135,16 +239,24 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
   };
 
   const handleRegister = async () => {
-    const newErrors = {
-      service: !formData.service,
-      auth: !formData.auth.trim(),
-      original: !formData.original.trim(),
-      expanded: !formData.expanded.trim()
-    };
-
-    setErrors(newErrors);
-
-    if (Object.values(newErrors).some(error => error)) {
+    // 입력값 검증 및 모달 표시
+    if (!formData.service) {
+      showModal('service-empty');
+      return;
+    }
+    
+    if (!formData.auth || !formData.auth.trim()) {
+      showModal('auth-empty');
+      return;
+    }
+    
+    if (!formData.original || !formData.original.trim()) {
+      showModal('keyword-original-empty');
+      return;
+    }
+    
+    if (!formData.expanded || !formData.expanded.trim()) {
+      showModal('keyword-expanded-empty');
       return;
     }
 
@@ -169,11 +281,17 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
           expanded: ''
         }));
         await fetchKeywords(formData.service, formData.auth);
+        showModal('keyword-register-success');
+      } else if (response.status === 401) {
+        showModal('auth-wrong');
+      } else if (response.status === 409) {
+        showModal('keyword-duplicate');
       } else {
-        console.error('키워드 등록 실패:', response.status);
+        showModal('keyword-register-error');
       }
     } catch (error) {
       console.error('키워드 등록 오류:', error);
+      showModal('keyword-register-error');
     } finally {
       setLoading(false);
     }
@@ -198,12 +316,16 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
       if (response.ok) {
         await fetchKeywords(formData.service, formData.auth);
         return true;
+      } else if (response.status === 401) {
+        showModal('auth-wrong');
+        return false;
       } else {
-        console.error('키워드 수정 실패:', response.status);
+        showModal('keyword-update-error');
         return false;
       }
     } catch (error) {
       console.error('키워드 수정 오류:', error);
+      showModal('keyword-update-error');
       return false;
     } finally {
       setLoading(false);
@@ -227,12 +349,16 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
       if (response.ok) {
         await fetchKeywords(formData.service, formData.auth);
         return true;
+      } else if (response.status === 401) {
+        showModal('auth-wrong');
+        return false;
       } else {
-        console.error('키워드 삭제 실패:', response.status);
+        showModal('keyword-delete-error');
         return false;
       }
     } catch (error) {
       console.error('키워드 삭제 오류:', error);
+      showModal('keyword-delete-error');
       return false;
     } finally {
       setLoading(false);
@@ -244,6 +370,44 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
       handleRegister();
     }
   };
+
+  const handleDropdownToggle = () => {
+    if (!initialService) {
+      setDropdownOpen(!dropdownOpen);
+      setFocused(prev => ({ ...prev, service: !dropdownOpen }));
+    }
+  };
+
+  const handleOptionSelect = (value) => {
+    if (!initialService) {
+      handleInputChange('service', value);
+      setDropdownOpen(false);
+      setFocused(prev => ({ ...prev, service: false }));
+    }
+  };
+
+  const getServiceLabel = (value) => {
+    switch (value) {
+      case 'contact': return 'Contact';
+      case 'pc_app': return 'PC App';
+      default: return '서비스를 선택하세요';
+    }
+  };
+
+  // 드랍다운 외부 클릭 감지
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && !event.target.closest('.custom-select-wrapper')) {
+        setDropdownOpen(false);
+        setFocused(prev => ({ ...prev, service: false }));
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   return (
     <KeywordSection show={show}>
@@ -269,33 +433,41 @@ const KeywordManager = ({ show, onBack, initialService, initialAuth }) => {
             </PageGuide>
 
             <InputGroup>
-              <SelectWrapper>
-                <Select
-                  value={formData.service}
-                  onChange={(e) => handleInputChange('service', e.target.value)}
-                  onFocus={() => handleFocus('service')}
-                  onBlur={() => handleBlur('service')}
+              <CustomSelectWrapper className="custom-select-wrapper">
+                <CustomSelectButton
+                  type="button"
+                  onClick={handleDropdownToggle}
                   disabled={!!initialService}
                   error={errors.service}
                   focused={focused.service}
+                  hasValue={!!formData.service}
+                  className={errors.service ? 'error' : ''}
                 >
-                  <option value="" disabled>서비스를 선택하세요</option>
-                  <option value="contact">Contact</option>
-                  <option value="pc_app">PC App</option>
-                </Select>
+                  <CustomSelectText>
+                    {getServiceLabel(formData.service)}
+                  </CustomSelectText>
+                  <CustomSelectArrow focused={focused.service} isOpen={dropdownOpen && !initialService}>
+                    <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
+                      <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </CustomSelectArrow>
+                </CustomSelectButton>
                 <InputLabel
                   focused={focused.service}
-                  hasValue={!!formData.service}
+                  hasValue={focused.service || !!formData.service}
                   error={errors.service}
                 >
                   서비스
                 </InputLabel>
-                <SelectArrow focused={focused.service}>
-                  <svg width="12" height="8" viewBox="0 0 12 8" fill="none">
-                    <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </SelectArrow>
-              </SelectWrapper>
+                <CustomSelectDropdown isOpen={dropdownOpen && !initialService}>
+                  <CustomSelectOption onClick={() => handleOptionSelect('contact')}>
+                    Contact
+                  </CustomSelectOption>
+                  <CustomSelectOption onClick={() => handleOptionSelect('pc_app')}>
+                    PC App
+                  </CustomSelectOption>
+                </CustomSelectDropdown>
+              </CustomSelectWrapper>
             </InputGroup>
 
             <InputGroup>

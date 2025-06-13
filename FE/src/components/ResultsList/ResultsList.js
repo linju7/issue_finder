@@ -54,11 +54,12 @@ const ResultItem = styled.div`
   border-radius: 16px;
   padding: 20px 24px;
   margin-bottom: 16px;
-  border: 1px solid #f0f3ff;
+  border: 2px solid #f0f3ff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   transition: all 0.3s ease, transform 0.3s ease;
   box-shadow: 0 2px 8px rgba(49, 130, 246, 0.08);
 
@@ -93,28 +94,34 @@ const ResultContent = styled.div`
   align-items: flex-start;
   text-align: left;
   min-width: 0;
+  max-width: calc(100% - 120px);
 `;
 
 const ResultTitle = styled.h3`
-  font-size: 18px;
+  font-size: ${props => props.length > 80 ? '14px' : props.length > 60 ? '16px' : '18px'};
   font-weight: 600;
   color: #333;
   margin: 0;
   line-height: 1.4;
   word-break: break-word;
   overflow-wrap: break-word;
-  transition: color 0.3s;
+  transition: color 0.3s, font-size 0.3s;
+  max-width: 100%;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 
   ${ResultItem}:hover & {
     color: #3182f6;
   }
 
   @media (max-width: 900px) {
-    font-size: 16px;
+    font-size: ${props => props.length > 80 ? '12px' : props.length > 60 ? '14px' : '16px'};
   }
 
   @media (max-width: 800px) {
-    font-size: 15px;
+    font-size: ${props => props.length > 80 ? '11px' : props.length > 60 ? '13px' : '15px'};
   }
 `;
 
@@ -248,7 +255,7 @@ const ResultsList = ({ results, show, onReset, loading }) => {
                   onClick={() => handleItemClick(result.link)}
                 >
                   <ResultContent>
-                    <ResultTitle>{result.title}</ResultTitle>
+                    <ResultTitle length={result.title.length}>{result.title}</ResultTitle>
                   </ResultContent>
                   <ResultSimilarity className={getSimClass(result.similarity_score)}>
                     {formatSimilarity(result.similarity_score)}
