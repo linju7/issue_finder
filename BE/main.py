@@ -149,4 +149,10 @@ async def expand_delete_api(request: Request):
 
 # 모든 API 라우트 선언 후에 static mount!
 from fastapi.staticfiles import StaticFiles
-app.mount("/", StaticFiles(directory="../FE", html=True), name="static")
+# React 빌드 결과물 서빙
+import os
+if os.path.exists("../FE/build") and os.listdir("../FE/build"):
+    app.mount("/", StaticFiles(directory="../FE/build", html=True), name="static")
+else:
+    print("⚠️  React 빌드 파일이 없습니다. 'cd FE && npm run build' 를 실행하세요.")
+    # 개발 중에는 React dev server를 사용하세요
