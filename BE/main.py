@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Request
-from all_search.all_search import search
+from search.search import search
 from security import AUTH
 from expand_keyword.retrieve_expanded_keyword import retrieve_expanded_keyword
 from expand_keyword.update_expanded_keyword import update_expanded_keyword

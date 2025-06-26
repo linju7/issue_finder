@@ -1,5 +1,5 @@
 import psycopg2
-from security import DB_password
+from security import DB_CONFIG
 import re
 
 def delete_expanded_keyword(service_name: str, original_keyword: str, expanded_keyword: str):
@@ -13,13 +13,7 @@ def delete_expanded_keyword(service_name: str, original_keyword: str, expanded_k
     
     try:
         # PostgreSQL 연결
-        conn = psycopg2.connect(
-            dbname="test",
-            user="junil",
-            password=DB_password,
-            host="localhost",
-            port="5432"
-        )
+        conn = psycopg2.connect(**DB_CONFIG)
         cursor = conn.cursor()
         
         # 테이블 존재 여부 확인

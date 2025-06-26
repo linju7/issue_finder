@@ -89,7 +89,4 @@ def expand_all_services_keywords():
 
 
 if __name__ == "__main__":
-    # 최초 실행 시 마이그레이션 먼저 실행 (주석 해제 후 1회 실행)
-    # migrate_keyword_map_to_db()
-    
     expand_all_services_keywords()

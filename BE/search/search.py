@@ -4,7 +4,7 @@ import numpy as np
 import psycopg2
 import re
 from sentence_transformers import SentenceTransformer, util
-from security import DB_password
+from security import DB_CONFIG
 
 # MeCab 안전 import
 try:
@@ -19,13 +19,7 @@ MODEL = SentenceTransformer('snunlp/KR-SBERT-V40K-klueNLI-augSTS')
 
 # 데이터베이스에서 데이터 로드
 def fetch_data():
-    connection = psycopg2.connect(
-        dbname="test",
-        user="junil",
-        password=DB_password,
-        host="localhost",
-        port="5432"
-    )
+    connection = psycopg2.connect(**DB_CONFIG)
     cursor = connection.cursor()
 
     query = "SELECT link, title, expanded_title FROM contact;"
