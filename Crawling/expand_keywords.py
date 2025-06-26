@@ -30,16 +30,22 @@ def get_keyword_map_from_db(service_name):
         return {}
 
 def apply_keyword_expansion(title, keyword_map):
-    """키워드 확장을 적용하여 제목을 변환"""
+    """키워드 확장을 적용하여 제목을 변환 (단방향: original -> expanded)"""
     if not keyword_map:
         return title
-        
-    # 양방향 매핑 생성 (original->expanded, expanded->original)
-    bidirectional_map = {**keyword_map, **{v: k for k, v in keyword_map.items()}}
     
-    for key, value in bidirectional_map.items():
-        title = title.replace(key, f"{key} {value} ")  # 확장 단어 사이에 공백 추가
-    return title
+    # 단방향 매핑만 사용 (original -> expanded)
+    expanded_title = title
+    
+    for original_keyword, expanded_keyword in keyword_map.items():
+        # original keyword를 만나면 "original expanded" 형태로 확장
+        if original_keyword in expanded_title:
+            expanded_title = expanded_title.replace(
+                original_keyword, 
+                f"{original_keyword} {expanded_keyword}"
+            )
+    
+    return expanded_title
 
 def expand_service_keywords(service_name):
     """특정 서비스의 데이터베이스에서 읽어와 키워드 확장을 적용하고 다시 저장"""
