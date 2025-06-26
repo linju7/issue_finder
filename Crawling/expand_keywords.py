@@ -1,22 +1,17 @@
 import json
 import os
 import psycopg2
-from security import configs, DB_password
+from security import configs, DB_CONFIG
 
-def get_keyword_map_from_db():
-    """DB에서 키워드 맵을 조회"""
+def get_keyword_map_from_db(service_name):
+    """DB에서 해당 서비스의 키워드 맵을 조회"""
     try:
-        connection = psycopg2.connect(
-            dbname="test",
-            user="junil",
-            password=DB_password,
-            host="localhost",
-            port="5432"
-        )
+        connection = psycopg2.connect(**DB_CONFIG)
         cursor = connection.cursor()
         
-        # 키워드 맵 조회 (service_name 컬럼 제거됨)
-        query = "SELECT original_keyword, expanded_keyword FROM contact_expand;"
+        # 해당 서비스의 키워드 맵 조회
+        expand_table = f"{service_name}_expand"
+        query = f"SELECT original_keyword, expanded_keyword FROM {expand_table};"
         cursor.execute(query)
         rows = cursor.fetchall()
         
@@ -35,51 +30,69 @@ def get_keyword_map_from_db():
         return {}
 
 def apply_keyword_expansion(title, keyword_map):
-    """키워드 확장을 적용하여 제목을 변환"""
+    """키워드 확장을 적용하여 제목을 변환 (단방향: original -> expanded)"""
     if not keyword_map:
         return title
-        
-    # 양방향 매핑 생성 (original->expanded, expanded->original)
-    bidirectional_map = {**keyword_map, **{v: k for k, v in keyword_map.items()}}
     
-    for key, value in bidirectional_map.items():
-        title = title.replace(key, f"{key} {value} ")  # 확장 단어 사이에 공백 추가
-    return title
+    # 단방향 매핑만 사용 (original -> expanded)
+    expanded_title = title
+    
+    for original_keyword, expanded_keyword in keyword_map.items():
+        # original keyword를 만나면 "original expanded" 형태로 확장
+        if original_keyword in expanded_title:
+            expanded_title = expanded_title.replace(
+                original_keyword, 
+                f"{original_keyword} {expanded_keyword}"
+            )
+    
+    return expanded_title
 
 def expand_service_keywords(service_name):
-    """특정 서비스의 JSON 파일에 키워드 확장을 적용하고 별도 파일로 저장"""
-    json_file = f"./issue_data/{service_name}/plane_issue.json"
-    output_file = f"./issue_data/{service_name}/expanded_issue.json"
-    
-    if not os.path.exists(json_file):
-        print(f"{service_name} 서비스의 JSON 파일이 없습니다: {json_file}")
-        return
-    
-    # DB에서 공통 키워드 맵 가져오기
-    keyword_map_dict = get_keyword_map_from_db()
-    if not keyword_map_dict:
-        print(f"키워드 맵이 DB에 없습니다.")
-        return
-    
-    with open(json_file, "r", encoding="utf-8") as f:
-        issues = json.load(f)
-    
-    if not issues:
-        print(f"{service_name} 서비스에 처리할 데이터가 없습니다.")
-        return
-    
-    # 키워드 확장 적용
-    expanded_issues = []
-    for issue in issues:
-        expanded_issue = issue.copy()  # 원본 데이터 복사
-        expanded_issue['expanded_title'] = apply_keyword_expansion(issue['title'], keyword_map_dict)
-        expanded_issues.append(expanded_issue)
-    
-    # expanded_issue.json 파일로 저장
-    with open(output_file, "w", encoding="utf-8") as f:
-        json.dump(expanded_issues, f, ensure_ascii=False, indent=4)
-    
-    print(f"{service_name} 서비스: {len(expanded_issues)}개 이슈에 키워드 확장 적용 완료 → {output_file}")
+    """특정 서비스의 데이터베이스에서 읽어와 키워드 확장을 적용하고 다시 저장"""
+    try:
+        # DB에서 해당 서비스의 키워드 맵 가져오기
+        keyword_map_dict = get_keyword_map_from_db(service_name)
+        if not keyword_map_dict:
+            print(f"{service_name} 서비스의 키워드 맵이 DB에 없습니다. 키워드 확장을 건너뜁니다.")
+            return
+        
+        # DB 연결
+        connection = psycopg2.connect(**DB_CONFIG)
+        cursor = connection.cursor()
+        
+        # 해당 서비스 테이블에서 원본 데이터 조회
+        select_query = f"SELECT link, title FROM {service_name}"
+        cursor.execute(select_query)
+        rows = cursor.fetchall()
+        
+        if not rows:
+            print(f"{service_name} 서비스에 처리할 데이터가 없습니다.")
+            connection.close()
+            return
+        
+        # 키워드 확장 적용 및 데이터베이스 업데이트
+        updated_count = 0
+        for link, title in rows:
+            expanded_title = apply_keyword_expansion(title, keyword_map_dict)
+            
+            # expanded_title 컬럼 업데이트
+            update_query = f"""
+                UPDATE {service_name} 
+                SET expanded_title = %s 
+                WHERE link = %s
+            """
+            cursor.execute(update_query, (expanded_title, link))
+            updated_count += 1
+        
+        connection.commit()
+        connection.close()
+        
+        print(f"{service_name} 서비스: {updated_count}개 이슈에 키워드 확장 적용 완료 (데이터베이스 업데이트)")
+        
+    except Exception as e:
+        print(f"{service_name} 서비스 키워드 확장 중 오류: {e}")
+        if 'connection' in locals():
+            connection.close()
 
 def expand_all_services_keywords():
     """모든 서비스에 대해 키워드 확장 적용"""

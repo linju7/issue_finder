@@ -38,14 +38,8 @@ def parse_issue_links(html_content):
 
     return issues
 
-def load_existing_json(file_path):
-    """기존 JSON 파일이 있으면 로드, 없으면 빈 리스트 반환"""
-    if os.path.exists(file_path):
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, FileNotFoundError):
-            return []
+def initialize_empty_json():
+    """새로운 크롤링 세션을 위해 빈 리스트 반환 (기존 데이터 무시)"""
     return []
 
 def save_issues_to_json():
@@ -58,14 +52,13 @@ def save_issues_to_json():
     for service_name, url_configs in configs.items():
         print(f"\n=== {service_name} 서비스 크롤링 시작 ===")
         
-        # 기존 JSON 파일 로드
+        # 새로운 크롤링 세션 시작 (기존 데이터 덮어쓰기)
         output_dir = f"./issue_data/{service_name}"
         os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, "plane_issue.json")
-        all_issues = load_existing_json(output_file)  # 기존 데이터 로드
+        all_issues = initialize_empty_json()  # 매번 새로 시작
         
-        initial_count = len(all_issues)
-        print(f"기존 이슈 개수: {initial_count}개")
+        print(f"새로운 크롤링 세션 시작 (기존 데이터 무시)")
 
         # 첫 번째 요청에서만 쿠키 설정
         cookie_set = False
@@ -94,12 +87,11 @@ def save_issues_to_json():
                 issues = parse_issue_links(html_content)
                 all_issues.extend(issues)  # 기존 데이터에 덧붙이기
 
-        # JSON 파일로 저장 (기존 + 새로 크롤링한 데이터)
+        # JSON 파일로 저장 (새로 크롤링한 데이터만)
         with open(output_file, "w", encoding="utf-8") as f:
             json.dump(all_issues, f, ensure_ascii=False, indent=4)
 
-        new_count = len(all_issues) - initial_count
-        print(f"{service_name}: 새로 {new_count}개 이슈 추가, 총 {len(all_issues)}개 이슈가 {output_file}에 저장되었습니다.")
+        print(f"{service_name}: 총 {len(all_issues)}개 이슈가 {output_file}에 저장되었습니다 (임시 파일).")
 
     driver.quit()
 
